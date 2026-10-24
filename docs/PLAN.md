@@ -480,8 +480,11 @@ No cross-farm console. Instead:
 - `php artisan farm:licence <module> active|grace|suspended|cancelled`: grace keeps capturing 14 days, then
   read-only.
 - `scripts/build-afrihost.sh`: `plaashek.zip` (with `vendor/`) and, with `--install-sql`, `install.sql`.
-- `scripts/update-all.sh` (run in cPanel Terminal): for each `plaashek-*/` folder, unpack the zip and run
-  `php artisan migrate --force`; stop at the first failure and report which farms are done.
+- `scripts/update-all.sh` (built, 24 October 2026): run every minute by a cPanel cron job, because the account
+  has no shell. Upload the zip to `~/plaashek-release/` and it updates each farm, demo first: maintenance page,
+  fresh folder with `.env` and `storage/` moved across, migrations, sign-in page must answer. It stops at the
+  first failure, leaving that farm on its maintenance page with its old code kept, and logs to
+  `~/plaashek-release/update.log` (docs/DEPLOY-AFRIHOST.md, Updates).
 - `docs/FARMS.md`: the farm table (subdomain, folder, database, language, modules, licence, live date, disk
   use), like BowlsBuddy's Clubs table. No passwords.
 

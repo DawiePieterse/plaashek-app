@@ -62,10 +62,36 @@ scripts/build-afrihost.sh        # build/afrihost/plaashek.zip
 
 ## Updates
 
-1. Build the zip.
-2. In cPanel > Terminal, for each farm: unpack it over `plaashek-<farm>/` and run `php artisan migrate --force`.
-   `.env` and `storage/` are kept (the zip has neither). `scripts/update-all.sh` will do every farm in one go
-   (PLAN.md Phase 3).
+Every farm is updated by `scripts/update-all.sh`, run by a cron job, because this account has no shell.
+
+**Once:** create the folder `~/plaashek-release/` and add a cron job (cPanel > Cron Jobs, Once Per Minute):
+
+```
+/bin/bash ~/plaashek-release/update-all.sh >/dev/null 2>&1
+```
+
+It does nothing until a zip is there, so it can stay on.
+
+**Each release:**
+
+1. On a computer (or a Claude session): `scripts/build-afrihost.sh`. It writes `build/afrihost/plaashek.zip`
+   and `build/afrihost/update-all.sh`.
+2. File Manager > `plaashek-release/`: upload `update-all.sh` first (overwrite), then `plaashek.zip`.
+3. Within a minute or two, open `plaashek-release/update.log`. Each farm, demo first, gets a line
+   `[farm] up: https://…/admin/login answered 200`, then `Done: every farm updated.`
+
+Per farm the script puts up the maintenance page, unpacks the release into a fresh `plaashek-<farm>.next/`,
+moves `.env` and `storage/` across, swaps the folders (so files a release removed are gone), runs the
+migrations, takes the maintenance page down and checks the sign-in page answers. The old code is then deleted.
+
+**When it stops:** the first farm that fails stays on its maintenance page, its old code kept as
+`plaashek-<farm>.previous/`; the farms after it are not touched and the zip is renamed `plaashek.zip.failed`,
+so it is not retried every minute. `update.log` says why. Fix that and upload the zip again (delete the
+`.failed` one). To go back to the old code instead: rename the farm's folder to `plaashek-<farm>.broken`,
+rename `plaashek-<farm>.previous` to `plaashek-<farm>`, move `.env` and `storage/` back into it, and delete
+`storage/framework/down`. Migrations only ever add, so the old code runs on the new tables.
+
+Disk: a farm needs room for a second copy of the code (about 70 MB) while it is being updated.
 
 ## Support access
 

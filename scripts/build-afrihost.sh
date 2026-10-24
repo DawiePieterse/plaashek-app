@@ -4,6 +4,8 @@
 #
 #   plaashek.zip   the whole app, vendor/ and public/ included -> extract inside the farm's folder
 #                  (e.g. plaashek-bekfontein/), whose subdomain has its document root set to its public/
+#   update-all.sh  the updater: upload it with the zip to ~/plaashek-release/ and every farm is updated by
+#                  its cron job (scripts/update-all.sh)
 #
 # A new farm then runs `php artisan migrate --force` and `php artisan farm:create` in cPanel > Terminal, or
 # opens its subdomain and fills in the first-run setup page. Committed files only, once the repo has a
@@ -65,6 +67,8 @@ grep -q ' public/css/filament/' <<<"$listing" || fail "no Filament assets"
 grep -q ' public/modules/weer/js/app\.js$' <<<"$listing" || fail "no Weather screens"
 grep -q '/\.git/' <<<"$listing" && fail "contains .git/ folders"
 grep -q ' \.env$' <<<"$listing" && fail "contains a .env file"
+
+cp "$ROOT/scripts/update-all.sh" "$OUT/update-all.sh"
 
 echo "Done: $OUT"
 ls -lh "$OUT"

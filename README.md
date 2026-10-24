@@ -39,7 +39,8 @@ npm test                         # the Weather screens' logic (node:test)
 | `app/Modules/Weer/` | The Weather module: Open-Meteo proxy and cache, `weather_days`, the page, its routes, migrations and words |
 | `public/modules/weer/` | The Weather screens: Weather Compare's plain JS, no build step |
 | `config/plaashek.php` | Which modules this build has; Open-Meteo key; the support account's email |
-| `scripts/build-afrihost.sh` | `plaashek.zip` to upload to a farm's folder |
+| `scripts/build-afrihost.sh` | `plaashek.zip` (and `update-all.sh`) to upload to Afrihost |
+| `scripts/update-all.sh` | Updates every farm from an uploaded zip, run by a cron job (docs/DEPLOY-AFRIHOST.md) |
 | `docs/` | Plan, Afrihost deployment, the farm list |
 
 ## Data
