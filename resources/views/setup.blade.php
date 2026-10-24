@@ -33,6 +33,10 @@
             <input id="name" name="name" value="{{ old('name') }}" required maxlength="100">
             @error('name')<div class="error">{{ $message }}</div>@enderror
 
+            <label for="phone">{{ __('plaashek.settings.phone') }}</label>
+            <input id="phone" name="phone" type="tel" value="{{ old('phone') }}" maxlength="30">
+            @error('phone')<div class="error">{{ $message }}</div>@enderror
+
             <label for="language">{{ __('plaashek.settings.language') }}</label>
             <select id="language" name="language">
                 <option value="af" @selected(old('language', 'af') === 'af')>Afrikaans</option>

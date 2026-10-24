@@ -530,7 +530,7 @@ async function renderHeaderWeather() {
   try {
     const c = await fetchCurrent({ lat: loc.lat, lon: loc.lon, units: state.units });
     const w = describeWeather(c.weather_code, c.is_day);
-    $("headerWeather").innerHTML = `<div class="flex items-center justify-end gap-1.5">
+    $("headerWeather").innerHTML = `<div class="flex items-center justify-end gap-1.5 whitespace-nowrap">
       <i class="fa-solid ${w.icon}"></i> ${Math.round(c.temperature_2m)}${escapeHtml(c.units?.temperature_2m || "°")}
       <span class="hidden sm:inline">· ${escapeHtml(t(w.text))} · ${c.relative_humidity_2m}%</span></div>`;
   } catch {

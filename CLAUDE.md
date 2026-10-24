@@ -36,6 +36,31 @@ Farm software as modules per farm, rebuilt on the BowlsBuddy model (`DawiePieter
   `farm.js` (forecast, rain record, frost) added. Pure logic is tested in `tests/js/`.
 - Field names in `fields.js` and the quick read (`insights.js`) are English only for now.
 
+## Workers (core)
+
+- `workers` (`App\Models\Worker`) is the minimal register under Farm settings: number, names, cell, photo,
+  active. Workers are never deleted, only made inactive; changes write `AuditLog`. Payroll and identity belong
+  to the Werkers module's own tables.
+- The card's QR holds the number only (`App\Support\WorkerCard`, SVG from `chillerlan/php-qrcode`, ECC H), the
+  same as Boord's badges, so Bekfontein's printed cards keep working. Sheet at `/workers/cards?ids=`.
+- Photos live on the private `local` disk (`serve` on, so the office shows them by signed URL only).
+- `App\Support\NaturalOrder` sorts tags and numbers the way they are read (B2 before B10).
+
+## Kudde module
+
+- The farm-PC Kudde (`DawiePieterse/Kudde`) is the spec; its pytest cases are ported in `tests/Feature/Kudde/`.
+- Stored: `kudde_animals` (identity) and `kudde_events` (everything that happens). Derived, never stored, in
+  one place (`Support\HerdState`): current camp, last weight, withdrawal end, has calved, class
+  (`Support\AnimalClass`). Every write goes through `Support\Herd`, idempotent on `client_uuid` (a batch
+  member's is `<uuid>:<animal id>`, a calf's birth `<uuid>:calf`).
+- Camps are core (`camps`, `App\Support\CampNames`): a record keeps the typed name as text, snapped to the
+  office's spelling; an unknown camp is added as it is used; names compared with `MB_CASE_FOLD` in PHP.
+- Tags are unique ignoring capitals (the collation); sorted naturally by `Support\Tags::compare`.
+- Weather comes from `weather_days` through `App\Modules\Weer\WeatherDays`, never a live call;
+  `kudde:weather` (05:25) stamps events saved before their day was filled.
+- API at `/kudde/api/*` behind the office login until phase 6's field sign-in; a viewer only reads.
+  Generated notes ("Calf K1", "Born to C1") are English: English in the database.
+
 ## Session setup (Claude Code on the web)
 
 `.claude/hooks/session-start.sh` installs and starts MariaDB (databases `plaashek`, `plaashek_test`,

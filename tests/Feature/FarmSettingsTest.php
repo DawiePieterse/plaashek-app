@@ -4,6 +4,7 @@ use App\Filament\Pages\FarmSettings;
 use App\Models\AuditLog;
 use App\Models\User;
 use App\Support\Farm;
+use App\Support\Settings;
 use Livewire\Livewire;
 
 it('lets the owner change the farm, and logs what changed', function () {
@@ -59,4 +60,11 @@ it('is open to Plaashek staff', function () {
 
     $this->actingAs(User::query()->where('role', User::STAFF)->firstOrFail())
         ->get(FarmSettings::getUrl())->assertOk();
+});
+
+it('shows the owner as the farmer on a farm set up before the farmer was stored', function () {
+    $this->actingAs(farm(['owner_name' => 'Andre']));
+    app(Settings::class)->set(Farm::FARMER, null);
+
+    Livewire::test(FarmSettings::class)->assertFormSet(['farmer' => 'Andre']);
 });

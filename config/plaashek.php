@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Kudde\KuddeModule;
 use App\Modules\Weer\WeerModule;
 
 return [
@@ -11,6 +12,7 @@ return [
      */
     'modules' => [
         WeerModule::class,
+        KuddeModule::class,
     ],
 
     // The support account farm:create adds to every farm, so Plaashek can help without borrowing a login.

@@ -18,6 +18,7 @@ it('creates the farm from the setup page, once', function () {
         'language' => 'af',
         'latitude' => '-23.83361',
         'longitude' => '30.16364',
+        'phone' => '015 555 0101',
         'owner_name' => 'Andre',
         'owner_email' => 'andre@example.com',
         'owner_password' => 'a-good-password',
@@ -28,6 +29,8 @@ it('creates the farm from the setup page, once', function () {
     expect($owner->role)->toBe(User::OWNER)
         ->and(setting(Farm::NAME))->toBe('Bekfontein')
         ->and(setting(Farm::LANGUAGE))->toBe('af')
+        ->and(setting(Farm::FARMER))->toBe('Andre')
+        ->and(setting(Farm::PHONE))->toBe('015 555 0101')
         ->and(position())->toBe(['lat' => -23.8336, 'lon' => 30.1636]);
 
     // Plaashek's support account exists, with a password nobody was told.

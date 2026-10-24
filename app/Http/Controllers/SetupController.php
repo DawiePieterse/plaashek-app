@@ -31,6 +31,7 @@ class SetupController extends Controller
             'language' => ['required', Rule::in(Farm::LANGUAGES)],
             'latitude' => ['nullable', 'numeric', 'between:-90,90', 'required_with:longitude'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180', 'required_with:latitude'],
+            'phone' => ['nullable', 'string', 'max:30'],
             'owner_name' => ['required', 'string', 'max:100'],
             'owner_email' => ['required', 'email', 'max:255'],
             'owner_password' => ['required', 'string', 'min:8', 'confirmed'],

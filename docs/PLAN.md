@@ -2,7 +2,9 @@
 
 **Version:** 0.9, 24 October 2026 (Phases 0–2 code written: minimal core, Farm settings, Weather)
 **Repo:** `DawiePieterse/plaashek-app` (the website is `DawiePieterse/Plaashek`; GitHub names ignore case)
-**Status:** Phase 0–2 code written and tested locally (Pest 32, node:test 78, browser check at phone and desktop).
+**Status:** Phase 4 (Kudde domain) code written 25 October 2026: animals, events, camps, calvings, derived herd
+state and the JSON API at `/kudde/api` (office login until phase 6), with old Kudde's tests ported to Pest.
+Phase 0–2 code written and tested locally (Pest 32, node:test 78, browser check at phone and desktop).
 Not committed, not deployed: the repo and the Afrihost package don't exist yet.
 
 Plaashek is farm software sold as modules per farm: Kudde, Boord, Veldnotas, Stoor, Water, Bespuitings,
@@ -132,7 +134,11 @@ on Bronze Pro), and the Open-Meteo commercial plan from the first paying farm (c
 - [ ] One office tab per enabled module, plus Farm settings (§5)
 - [ ] Field users with username/cell + PIN, the devices page, disable a person or a phone (§5)
 - [ ] Field PWA shell: sign-in, change user, home screen with one tile per enabled module, the outbox and sync (§7)
-- [ ] Camps: shared master data, used by Kudde now and by Water, Bespuitings and Veldnotas later
+- [x] **Worker register, minimal** (owner's call, 25 October 2026), under Farm settings: number, first names,
+  surname, known-as, cell, photo, active; and the 58 × 78 mm cards whose QR holds the number (Boord's layout,
+  QR drawn on the server as SVG). Enough for every module to scan and name a worker; the Werkers module adds
+  identity and payroll beside it (§2.4)
+- [x] Camps: shared master data (`camps`, `App\Support\CampNames`), used by Kudde now and by Water, Bespuitings and Veldnotas later
 - [x] Weather data: the farm's Open-Meteo proxy and its cache (§2.3), plus `weather_days` (one row per date for
   the farm's position) that Kudde and later modules stamp from
 - [ ] Audit log of office corrections, visible to the farm
@@ -144,21 +150,22 @@ on Bronze Pro), and the Open-Meteo commercial plan from the first paying farm (c
 Everything the farm-PC Kudde does today is the v1 checklist. Tick off here as built.
 
 **Herd**
-- [ ] Animals: ear tag (unique per farm), name, breed (free text), sex, birth date, sire/dam **by tag** (may
+- [x] Animals: ear tag (unique per farm, ignoring capitals), name, breed (free text), sex, birth date, sire/dam **by tag** (may
   point at nothing in this herd), castrated flag, status (alive/dead/sold, set only by a death or sale event)
-- [ ] Class derived, never stored: cow, heifer, bull, steer, calf (`classes.py`)
-- [ ] Derived from the event history in one place (`herd.py`): current camp, last weight, withdrawal end date,
+- [x] Class derived, never stored: cow, heifer, bull, steer, calf (`classes.py`)
+- [x] Derived from the event history in one place (`herd.py`, now `Support\HerdState`): current camp, last weight, withdrawal end date,
   whether a cow has calved
-- [ ] Camps as in old Kudde: farm order (not alphabetical), archive not delete, names compared ignoring case in
+- [x] Camps as in old Kudde: farm order (not alphabetical), archive not delete, names compared ignoring case in
   PHP not SQL (Afrikaans diacritics), a typed camp snaps to the stored spelling, an unknown one is added
 
 **Events**
-- [ ] Kinds: birth, weight, treatment, movement, death, sale
-- [ ] Treatment: product, dose, withdrawal days (stored as days, so a corrected date stays right)
-- [ ] Product chips: past treatments, most recent first, with their last dose and withdrawal
-- [ ] Bulk movement and bulk treatment (a group through the crush)
-- [ ] Calving: cow + new calf in one step, idempotent
-- [ ] Weather stamped on the event date; never blocks the save
+- [x] Kinds: birth, weight, treatment, movement, death, sale
+- [x] Treatment: product, dose, withdrawal days (stored as days, so a corrected date stays right)
+- [x] Product chips: past treatments, most recent first, with their last dose and withdrawal
+- [x] Bulk movement and bulk treatment (a group through the crush)
+- [x] Calving: cow + new calf in one step, idempotent
+- [x] Weather stamped on the event date from `weather_days`; never blocks the save (a day not yet filled is
+  stamped next morning by `kudde:weather`)
 
 **Photos**
 - [ ] Per animal, idempotent upload by `client_uuid`, resized on the phone, served only through the app
@@ -166,7 +173,7 @@ Everything the farm-PC Kudde does today is the v1 checklist. Tick off here as bu
 **Office tab**
 - [ ] Dashboard: head count by class, by camp, animals under withdrawal
 - [ ] Herd list, animal page with timeline and photos, corrections
-- [ ] Export: animals and events
+- [x] Export: animals and events (CSV, `/kudde/api/export/*.csv`; the office button comes with the tab)
 
 **Herds and breeding** (promised on the website, not in old Kudde; in v1 by the owner's call)
 - [ ] Herds: named groups of animals, beside camps (an animal is in one herd and one camp at a time)
@@ -232,7 +239,8 @@ unchanged in style) and its unit tests. Tick off here as built.
 
 ### 2.4 Werkers module (`werkers`, R150 pm)
 
-A worker here is **someone the farm employs**, not someone who signs in. Most workers never touch a phone; a
+A worker here is **someone the farm employs**, not someone who signs in. The core already keeps the minimal
+register and prints the cards (§2.1); this module adds everything below that is not yet ticked. Most workers never touch a phone; a
 foreman who does has a field login (§5) linked to their worker record. Tick off here as built.
 
 **The register**
@@ -251,9 +259,9 @@ foreman who does has a field login (§5) linked to their worker record. Tick off
 - [ ] Notes
 
 **ID card and QR**
-- [ ] The QR holds the worker number and nothing else (ADR 0011). A lost card is reprinted with the same number;
+- [x] The QR holds the worker number and nothing else (ADR 0011). A lost card is reprinted with the same number;
   a worker who leaves is marked inactive, and their card then scans as "No longer working here"
-- [ ] Card: **58 × 78 mm portrait, the same as Boord's**, so it fits the holders the farm already has: farm name,
+- [x] Card: **58 × 78 mm portrait, the same as Boord's**, so it fits the holders the farm already has: farm name,
   photo, preferred name, worker number, QR, valid from. Printed in mm from the browser, several to an A4 sheet,
   from one worker, a selection or a team (Boord's `print-badge.html` layout and mm budget, copied)
 - [ ] QR code generated in the browser from a vendored library, nothing fetched
@@ -419,7 +427,8 @@ prefixed with the module code.
 | `kudde_photos` | file under `storage/app/photos/kudde/<animal_id>/` | `client_uuid` unique |
 | `kudde_herds` | name, sort order, archived | Same rules as camps |
 | `kudde_breeding` | animal, kind (bull in / AI / pregnancy check), dates, bull tag, result, by whom | Expected calving derived, never stored |
-| `werkers_workers` | number (unique), names, identity, contact, employment, payment method, photo, active | ID/passport/permit, bank account and tax numbers encrypted |
+| `workers` | number (unique), first names, surname, known as, cell, photo, active | Core, under Farm settings: what every module scans and names |
+| `werkers_workers` | one row per worker: identity, contact, employment, payment method | Werkers' extension of `workers`; ID/passport/permit, bank account and tax numbers encrypted |
 | `werkers_rates` | worker, basis, rate (cents), effective from, set by | Append-only; newest effective row applies |
 | `werkers_teams` | name, sort order, archived | |
 | `werkers_pay_runs` | frequency, period start and end, pay date, status (draft, finalised, paid), paid method and date | |

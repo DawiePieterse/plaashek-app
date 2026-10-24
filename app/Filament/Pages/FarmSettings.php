@@ -47,9 +47,15 @@ class FarmSettings extends Page
         'frost_threshold' => Farm::FROST_THRESHOLD,
     ];
 
-    public static function getNavigationLabel(): string
+    /** Farm settings is a menu group: this page (the farm itself) and the worker register. */
+    public static function getNavigationGroup(): string
     {
         return __('plaashek.settings.title');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return __('plaashek.settings.farm');
     }
 
     public function getTitle(): string|Htmlable
@@ -70,6 +76,9 @@ class FarmSettings extends Page
         foreach (self::KEYS as $field => $key) {
             $data[$field] = $settings->get($key);
         }
+        // Farms set up before setup stored the farmer have none: the owner is who it would have been. It is
+        // only shown here, and saved with the next Save, so nothing changes behind the owner's back.
+        $data['farmer'] ??= User::query()->where('role', User::OWNER)->orderBy('id')->value('name');
         $data['language'] = $farm->language();
         $data['season_start_month'] = (string) $farm->seasonStartMonth();
         $data['frost_threshold'] = $farm->frostThreshold();

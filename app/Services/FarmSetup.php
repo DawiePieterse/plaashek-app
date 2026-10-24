@@ -28,6 +28,7 @@ class FarmSetup
     /**
      * @param  array{name: string, language: string, owner_name: string, owner_email: string,
      *               owner_password?: string|null, latitude?: float|string|null, longitude?: float|string|null,
+     *               farmer?: string|null, phone?: string|null,
      *               modules?: list<string>}  $input
      * @return array{0: User, 1: string} the owner and their password (generated when none was given)
      */
@@ -38,6 +39,10 @@ class FarmSetup
         $owner = DB::transaction(function () use ($input, $password) {
             $this->settings->set(Farm::NAME, $input['name']);
             $this->settings->set(Farm::LANGUAGE, $input['language']);
+            // The owner is the farmer Farm settings shows, unless told otherwise; asking twice for one name
+            // on a first-run page is how the field was left blank on every farm before this.
+            $this->settings->set(Farm::FARMER, trim((string) ($input['farmer'] ?? '')) ?: $input['owner_name']);
+            $this->settings->set(Farm::PHONE, trim((string) ($input['phone'] ?? '')) ?: null);
             $this->settings->set(Farm::LATITUDE, self::coordinate($input['latitude'] ?? null));
             $this->settings->set(Farm::LONGITUDE, self::coordinate($input['longitude'] ?? null));
 

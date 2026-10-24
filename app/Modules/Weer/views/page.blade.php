@@ -27,11 +27,13 @@
       <div class="font-bold text-2xl leading-tight"><i class="fa-solid fa-cloud-sun"></i> {{ __('weer::ui.title') }}</div>
       <div class="text-sm text-white/80 mt-0.5">{{ $page['farm']['name'] }} · <span id="headerDate">&nbsp;</span></div>
     </div>
-    <div class="flex items-start gap-3">
-      <div id="headerWeather" class="text-right text-sm font-semibold text-white/90 space-y-0.5"></div>
-      <button id="refreshBtn" class="text-white/80 hover:text-white p-1" title="{{ __('weer::ui.refresh') }}"><i class="fa-solid fa-arrows-rotate"></i></button>
-      <button id="settingsBtn" class="text-white/80 hover:text-white p-1" title="{{ __('weer::ui.settings') }}"><i class="fa-solid fa-gear"></i></button>
-      <a href="/admin" class="text-white/80 hover:text-white p-1" title="{{ __('weer::ui.back') }}"><i class="fa-solid fa-house"></i></a>
+    {{-- Centred on one line: the weather text and the three buttons are different heights, and top-aligned the
+         text sat above the icons. The buttons get equal boxes, big enough for a thumb. --}}
+    <div class="flex items-center gap-1 h-9">
+      <div id="headerWeather" class="text-right text-sm font-semibold text-white/90 leading-none mr-1"></div>
+      <button id="refreshBtn" class="header-btn" title="{{ __('weer::ui.refresh') }}"><i class="fa-solid fa-arrows-rotate"></i></button>
+      <button id="settingsBtn" class="header-btn" title="{{ __('weer::ui.settings') }}"><i class="fa-solid fa-gear"></i></button>
+      <a href="/admin" class="header-btn" title="{{ __('weer::ui.back') }}"><i class="fa-solid fa-house"></i></a>
     </div>
   </div>
 </header>
