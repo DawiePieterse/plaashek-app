@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#0A2F6B"/>
+  <g id="art" transform="translate(0 -24)">
+    <!-- Plaashek's gate, with the herd's ear tag hung on it -->
+    <rect x="44" y="416" width="424" height="12" rx="6" fill="#061f4a"/>
+    <rect x="58" y="146" width="32" height="276" rx="6" fill="#d6a35c"/>
+    <rect x="422" y="146" width="32" height="276" rx="6" fill="#d6a35c"/>
+    <rect x="54" y="138" width="40" height="14" rx="5" fill="#b7833f"/>
+    <rect x="418" y="138" width="40" height="14" rx="5" fill="#b7833f"/>
+    <g fill="#ffffff">
+      <rect x="100" y="170" width="16" height="230" rx="4"/>
+      <rect x="396" y="170" width="16" height="230" rx="4"/>
+      <rect x="100" y="170" width="312" height="16" rx="4"/>
+      <rect x="100" y="240" width="312" height="14" rx="4"/>
+      <rect x="100" y="310" width="312" height="14" rx="4"/>
+      <rect x="100" y="384" width="312" height="16" rx="4"/>
+    </g>
+    <line x1="116" y1="392" x2="396" y2="178" stroke="#ffffff" stroke-width="16" stroke-linecap="round"/>
+    <g fill="#9ca3af"><rect x="86" y="180" width="22" height="9" rx="3"/><rect x="86" y="380" width="22" height="9" rx="3"/></g>
+    <line x1="256" y1="176" x2="256" y2="226" stroke="#9ca3af" stroke-width="7" stroke-linecap="round"/>
+    <g transform="translate(256 196) scale(0.62) translate(-256 -84)">
+      <path d="M216 84 H296 A20 20 0 0 1 316 104 V170 C316 176 320 180 326 180 H346 A32 32 0 0 1 378 212 V396 A40 40 0 0 1 338 436 H174 A40 40 0 0 1 134 396 V212 A32 32 0 0 1 166 180 H186 C192 180 196 176 196 170 V104 A20 20 0 0 1 216 84 Z" fill="#dc2626"/>
+      <circle cx="256" cy="128" r="20" fill="#0A2F6B"/>
+      <circle cx="256" cy="128" r="9" fill="#9ca3af"/>
+      <g fill="none" stroke="#ffffff" stroke-width="22" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="164" y="270" width="52" height="84" rx="26"/>
+        <rect x="238" y="270" width="52" height="84" rx="26"/>
+        <path d="M314 288 L336 270 V354"/>
+      </g>
+    </g>
+  </g>
+</svg>
