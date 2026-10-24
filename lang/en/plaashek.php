@@ -1,0 +1,42 @@
+<?php
+
+return [
+    'setup' => [
+        'title' => 'Set up the farm',
+        'intro' => 'Plaashek has no farm yet. Fill this in once; the owner then signs in with the email and password chosen here.',
+        'farm' => 'The farm',
+        'owner' => "The owner's login",
+        'owner_name' => "Owner's name",
+        'owner_email' => 'Email address',
+        'password' => 'Password (at least 8 characters)',
+        'password_again' => 'Password again',
+        'create' => 'Create the farm',
+        'done' => 'The farm is ready. Sign in with the email and password you just chose.',
+    ],
+    'settings' => [
+        'title' => 'Farm settings',
+        'farm' => 'The farm',
+        'name' => 'Farm name',
+        'farmer' => 'Farmer',
+        'phone' => 'Phone',
+        'language' => 'Language on screen',
+        'position' => 'Position',
+        'position_hint' => "The farm's position in decimal degrees. The weather is forecast for this point.",
+        'latitude' => 'Latitude',
+        'longitude' => 'Longitude',
+        'use_my_location' => 'Use my location',
+        'locating' => 'Finding the position…',
+        'location_unavailable' => 'This device cannot give its position.',
+        'location_refused' => 'The position was not allowed or could not be found.',
+        'weather' => 'Weather',
+        'season_start_month' => 'Season starts in',
+        'season_start_hint' => 'Rain "this season" is counted from the first of this month.',
+        'frost_threshold' => 'Frost below',
+        'frost_hint' => 'Nights forecast at or below this are marked as frost risk.',
+        'save' => 'Save settings',
+        'saved' => 'Settings saved',
+    ],
+    'modules' => [
+        'weer' => 'Weather',
+    ],
+];

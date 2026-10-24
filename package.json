@@ -1,0 +1,9 @@
+{
+  "name": "plaashek",
+  "private": true,
+  "type": "module",
+  "description": "Plaashek's browser code tests. No build step: the code is served as it is.",
+  "scripts": {
+    "test": "node --test tests/js/*.test.js"
+  }
+}

@@ -1,0 +1,42 @@
+<?php
+
+return [
+    'setup' => [
+        'title' => 'Stel die plaas op',
+        'intro' => 'Plaashek het nog geen plaas nie. Vul dit een keer in; die eienaar teken dan aan met die e-pos en wagwoord wat hier gekies word.',
+        'farm' => 'Die plaas',
+        'owner' => 'Die eienaar se aanmelding',
+        'owner_name' => 'Eienaar se naam',
+        'owner_email' => 'E-posadres',
+        'password' => 'Wagwoord (minstens 8 karakters)',
+        'password_again' => 'Wagwoord weer',
+        'create' => 'Skep die plaas',
+        'done' => 'Die plaas is gereed. Teken aan met die e-pos en wagwoord wat jy pas gekies het.',
+    ],
+    'settings' => [
+        'title' => 'Plaasinstellings',
+        'farm' => 'Die plaas',
+        'name' => 'Plaasnaam',
+        'farmer' => 'Boer',
+        'phone' => 'Telefoon',
+        'language' => 'Taal op die skerm',
+        'position' => 'Ligging',
+        'position_hint' => 'Die plaas se ligging in desimale grade. Die weer word vir hierdie punt voorspel.',
+        'latitude' => 'Breedtegraad',
+        'longitude' => 'Lengtegraad',
+        'use_my_location' => 'Gebruik my ligging',
+        'locating' => 'Soek die ligging…',
+        'location_unavailable' => 'Hierdie toestel kan nie sy ligging gee nie.',
+        'location_refused' => 'Die ligging is nie toegelaat nie of kon nie gevind word nie.',
+        'weather' => 'Weer',
+        'season_start_month' => 'Seisoen begin in',
+        'season_start_hint' => 'Reën "hierdie seisoen" word vanaf die eerste van hierdie maand getel.',
+        'frost_threshold' => 'Ryp onder',
+        'frost_hint' => 'Nagte wat op of onder hierdie voorspel word, word as ryprisiko gemerk.',
+        'save' => 'Stoor instellings',
+        'saved' => 'Instellings gestoor',
+    ],
+    'modules' => [
+        'weer' => 'Weer',
+    ],
+];
