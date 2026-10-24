@@ -26,7 +26,7 @@ class EventsReport extends KuddeReport
 
     public function columns(): array
     {
-        return self::headings(['date', 'tag', 'name', 'kind', 'weight', 'camp', 'product', 'dose', 'withdrawal_days',
+        return self::headings(['date', 'tag', 'species', 'name', 'kind', 'weight', 'camp', 'product', 'dose', 'withdrawal_days',
             'note', 'rain', 'by']);
     }
 
@@ -38,8 +38,8 @@ class EventsReport extends KuddeReport
                 continue;
             }
             yield [
-                'date' => $e->event_date->toDateString(), 'tag' => $e->animal?->tag, 'name' => $e->animal?->name,
-                'kind' => __('kudde::ui.kind.'.$e->kind), 'weight' => $e->value, 'camp' => $e->location,
+                'date' => $e->event_date->toDateString(), 'tag' => $e->animal?->tag, 'species' => $e->animal?->species?->name(),
+                'name' => $e->animal?->name, 'kind' => __('kudde::ui.kind.'.$e->kind), 'weight' => $e->value, 'camp' => $e->location,
                 'product' => $e->product, 'dose' => $e->dose, 'withdrawal_days' => $e->withdrawal_days, 'note' => $e->note,
                 'rain' => $e->weather_rain, 'by' => self::who($e),
             ];

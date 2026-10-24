@@ -200,26 +200,29 @@ Everything the farm-PC Kudde does today is the v1 checklist. Tick off here as bu
 - [x] Export: animals and events (CSV, `/kudde/api/export/*.csv`; the office button comes with the tab)
 
 **Livestock types** (owner's call, 25 October 2026: farms keep more than cattle)
-- [ ] Every animal has a species. **The species and all their rules are farm settings** (Kudde's part of Farm
+- [x] Every animal has a species. **The species and all their rules are farm settings** (Kudde's part of Farm
   settings), seeded with cattle, sheep, goats and pigs; a farm switches on the ones it keeps and can add another
   (horses, game) with its own rules. A farm with one species never sees a species picker
-- [ ] Per species, editable in Settings: its name in `af`/`en`; the class names for young female, female,
+- [x] Per species, editable in Settings: its name in `af`/`en`; the class names for young female, female,
   female that has given birth, young male, male, castrated male (e.g. cattle: heifer calf, heifer, cow, bull
   calf, bull, steer; sheep: ewe lamb, ewe, ewe, ram lamb, ram, wether; goats: doe kid, doe, doe, buck kid, buck,
   kapater; pigs: piglet, gilt, sow, piglet, boar, barrow); young until (cattle 365 days, sheep and goats 180,
   pigs 70); gestation (283, 147, 150, 114 days); weigh every (cattle 182 days; others set by the farm); the word
   for a birth (calving, lambing, kidding, farrowing)
-- [ ] `Support\AnimalClass` and `HerdState` read the species' rules instead of cattle's constants; the class
+- [x] `Support\AnimalClass` and `HerdState` read the species' rules instead of cattle's constants; the class
   logic itself (sex, young, has given birth, castrated) stays one rule for all
-- [ ] **Tags unique per species** (owner's call): sheep 001 and cow 001 may both exist, so every tag lookup, the
-  API and the field app carry the species. Existing animals become cattle
-- [ ] Births take one or more young (twins in sheep and goats); calving becomes "birth", named per species
-- [ ] **Pigs: a litter on the sow, piglets tagged at weaning** (owner's call): the farrowing records born
+- [x] **Tags unique per species** (owner's call): sheep 001 and cow 001 may both exist, so every tag lookup, the
+  API and the field app carry the species (a request that names none and hits a tag two species share gets a
+  409). Existing animals become cattle
+- [x] Births take one or more young (twins in sheep and goats); calving becomes "birth", named per species
+  (`POST /calvings` takes `young`; the field app's form still adds one young at a time: twins in the field are
+  still to do)
+- [x] **Pigs: a litter on the sow, piglets tagged at weaning** (owner's call): the farrowing records born
   alive, stillborn and fostered; weaning records how many were weaned and creates the tagged animals, each
   with the sow as dam and the litter's date as birth date. Same option for any species set to "young tagged at
   weaning" in Settings
-- [ ] Field app: a species switch at the top (only the farm's species); camps stay shared across species
-- [ ] Office: counts per species, then class; export carries the species
+- [x] Field app: a species switch at the top (only the farm's species); camps stay shared across species
+- [x] Office: counts per species, then class; export carries the species
 - [ ] Not in v1: flock-level records without individual tags (bulk move and treat cover most of it; the
   planned herds become flocks)
 

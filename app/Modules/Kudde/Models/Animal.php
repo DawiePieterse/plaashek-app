@@ -3,15 +3,17 @@
 namespace App\Modules\Kudde\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
- * An animal, as small-scale cattle recording needs it: a deliberate trim of ICAR's animal resource, not a
+ * An animal, as small-scale livestock recording needs it, of one of the farm's species: a deliberate trim of ICAR's animal resource, not a
  * stud registry (no herdbook numbers, breed codes or DNA). Who the animal is lives here; what happens to it
  * is an AnimalEvent; where it is, what it weighs and what kind of animal it is are derived (HerdState).
  *
  * @property int $id
+ * @property int $species_id
  * @property string $tag the ear tag, what the farmer reads off the animal
  * @property string $name
  * @property string $breed free text: no breed-code lookup
@@ -53,6 +55,12 @@ class Animal extends Model
             'birth_date' => 'date:Y-m-d',
             'castrated' => 'boolean',
         ];
+    }
+
+    /** @return BelongsTo<Species, $this> */
+    public function species(): BelongsTo
+    {
+        return $this->belongsTo(Species::class);
     }
 
     /** @return HasMany<AnimalEvent, $this> */

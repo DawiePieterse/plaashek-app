@@ -22,6 +22,11 @@ class HerdException extends RuntimeException
         return new self(__('kudde::ui.no_animal', ['tag' => $tag]), 404);
     }
 
+    public static function ambiguousTag(string $tag): self
+    {
+        return new self(__('kudde::ui.ambiguous_tag', ['tag' => $tag]), 409);
+    }
+
     public function render(): JsonResponse
     {
         return response()->json(['message' => $this->getMessage()], $this->status);

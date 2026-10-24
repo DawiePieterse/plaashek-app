@@ -5,6 +5,8 @@ namespace App\Modules\Kudde\Filament;
 use App\Filament\ModuleSettings;
 use App\Models\Camp;
 use App\Modules\Kudde\Filament\Resources\Camps\CampResource;
+use App\Modules\Kudde\Filament\Resources\Species\SpeciesResource;
+use App\Modules\Kudde\Models\Species;
 use App\Modules\Kudde\Support\KuddeSettings;
 use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
@@ -49,6 +51,13 @@ class KuddeSettingsPage extends ModuleSettings
                     ->helperText(__('kudde::ui.settings.weigh_every_days_hint'))
                     ->integer()->minValue(7)->maxValue(730)->suffix(__('kudde::ui.settings.days'))->required(),
             ]),
+            // The species are their own list too: each has a page of rules, and a farm adds what the seed lacks.
+            Section::make(__('kudde::ui.species.title'))
+                ->description(fn () => __('kudde::ui.settings.species_hint', ['names' => Species::enabled()->map(fn (Species $s) => $s->name())->join(', ')]))
+                ->headerActions([
+                    Action::make('species')->label(__('kudde::ui.settings.manage_species'))->icon(Heroicon::OutlinedRectangleStack)
+                        ->url(SpeciesResource::getUrl()),
+                ]),
             // The camps are their own list (renamed, reordered, archived one at a time), opened from here.
             Section::make(__('kudde::ui.camps.title'))
                 ->description(fn () => trans_choice('kudde::ui.settings.camps_hint', Camp::query()->where('archived', false)->count(),

@@ -74,6 +74,16 @@ const Kudde = {
     }
     const token = typeof KuddeSignIn !== "undefined" ? KuddeSignIn.token() : null;
     if (token) headers.Authorization = `Bearer ${token}`;
+    // Tags are unique per species: a write names the species the phone is
+    // working in (an outbox entry already carries the one it was made in,
+    // idb.js), and an animal's own page asks within it.
+    const species = typeof KuddeSpecies !== "undefined" ? KuddeSpecies.current() : null;
+    if (species && body && typeof body === "object" && !Array.isArray(body) && !body.species) {
+      body = { ...body, species };
+    }
+    if (species && method === "GET" && /^\/api\/animals\/[^/?]+/.test(path) && !/[?&]species=/.test(path)) {
+      path += `${path.includes("?") ? "&" : "?"}species=${encodeURIComponent(species)}`;
+    }
     let payload = body;
     if (body !== undefined) {
       headers["Content-Type"] = "application/json";
@@ -263,16 +273,17 @@ const Kudde = {
   },
 
   // The class an animal would have, worked out on the device, for one the
-  // server has not answered about yet (added offline). Same rules as
-  // backend/classes.py, less "has calved", which the phone cannot know for
-  // a new animal - and a new animal has not.
+  // server has not answered about yet (added offline). Same rule as the
+  // server's AnimalClass, in the species' own words, less "has given birth",
+  // which the phone cannot know for a new animal - and a new animal has not.
   localClass(a) {
-    const CALF_UNTIL_DAYS = 365;
+    const sp = typeof KuddeSpecies !== "undefined" ? KuddeSpecies.get(KuddeSpecies.of(a)) : null;
+    const names = (sp && sp.classNames) || {};
     const born = Kudde._parseDate(a.birth_date);
-    const isCalf = born && (Date.now() - born.getTime()) / 86400000 < CALF_UNTIL_DAYS;
-    if (a.sex === "female") return isCalf ? "heifer calf" : "heifer";
-    const base = a.castrated ? "steer" : "bull";
-    return isCalf ? `${base} calf` : base;
+    const young = born && (Date.now() - born.getTime()) / 86400000 < ((sp && sp.youngUntilDays) || 365);
+    const role = a.sex === "female" ? (young ? "young_female" : "female")
+      : a.castrated ? (young ? "young_castrated" : "castrated") : (young ? "young_male" : "male");
+    return names[role] || role.replace("_", " ");
   },
 
   eventLabel(kind) {

@@ -49,7 +49,7 @@ Farm software as modules per farm, rebuilt on the BowlsBuddy model (`DawiePieter
   release.
 - The panel's Tailwind build has only Filament's classes: our views use the plain CSS in
   `resources/views/filament/styles.blade.php` or inline styles, not Tailwind utilities.
-- A module adds Filament resources with `Module::filamentResources()` (Kudde: the camps).
+- A module adds Filament resources with `Module::filamentResources()` (Kudde: the camps and the species).
 
 ## Weather module
 
@@ -86,7 +86,17 @@ Farm software as modules per farm, rebuilt on the BowlsBuddy model (`DawiePieter
   to archive a camp with alive animals. The `camps` table, model and `App\Support\CampNames` stay in the core
   (renaming them is churn for nothing): a record keeps the typed name as text, snapped to the office's spelling;
   an unknown camp is added as it is used; names compared with `MB_CASE_FOLD` in PHP.
-- Tags are unique ignoring capitals (the collation); sorted naturally by `Support\Tags::compare`.
+- **Species** (`Models\Species`, `kudde_species`, phase 4b): every animal has one; all rules are the farm's, edited
+  in `Filament\Resources\Species` under Kudde's settings (names, class names per role per language, young until,
+  gestation, weigh every, birth word, young tagged at weaning). Never deleted; the last one on stays on.
+  `AnimalClass::role` is one rule for every species (mother, female, male, castrated, young_*); the species only
+  names the role. Class labels read "Sheep: ewe" once more than one species is in play (`HerdState::classLabel`).
+- Tags are unique per species, ignoring capitals (the collation); sorted naturally by `Support\Tags::compare`.
+  Requests carry `species`; with none, `Species::fallback()` (the only one kept, else cattle) for a new animal,
+  and a lookup of a tag two species share is a 409 (`HerdException::ambiguousTag`). `Herd::of($species)` scopes.
+- Births (`Herd::recordBirth`, `POST /calvings`): `calf` (one, as before), `young` (twins) or `litter` (counted on
+  the mother, `kudde_litters`, for species tagged at weaning: pigs). `POST /litters/{id}/wean` tags the young,
+  with her as dam and the litter's date as birth date. The field API has no route-model binding: look ids up.
 - Weather comes from `weather_days` through `App\Modules\Weer\WeatherDays`, never a live call;
   `kudde:weather` (05:25) stamps events saved before their day was filled.
 - API at `/kudde/api/*` behind the office login; a viewer only reads. The same methods at
@@ -94,7 +104,8 @@ Farm software as modules per farm, rebuilt on the BowlsBuddy model (`DawiePieter
   Bearer token, valid until the farm's midnight), less corrections, camp management and exports. Records get
   `worker_id` from the session, or from `captured_by` (the worker signed in when an outbox record was made).
 - The field app is `/kudde/field` (`views/field.blade.php`, `public/modules/kudde/`): old Kudde's field screens
-  plus `js/signin.js`, the daily card scan. Service worker served by a route, cache name hashed from the shell.
+  plus `js/signin.js`, the daily card scan, and `js/species.js`, the species switch (only with more than one;
+  `api.js` adds the species to every write, `idb.js` stamps it on an outbox entry when made). Service worker served by a route, cache name hashed from the shell.
   Card scans have their own named limiter (`kudde-sign-in`): a plain `throttle:N,1` shares its counter with
   the group's.
 - Generated notes ("Calf K1", "Born to C1") are English: English in the database.

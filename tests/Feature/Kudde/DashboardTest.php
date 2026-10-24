@@ -94,7 +94,7 @@ it('exports animals with their context', function () {
 
     expect($rows->keys()->all())->toBe(['A1', 'B2', 'C3'])
         ->and($rows['A1'])->toMatchArray(['name' => 'Bessie', 'breed' => 'Nguni', 'sex' => 'female', 'status' => 'alive',
-            'camp' => 'Bo-kamp', 'last_weight_kg' => '310.0', 'class' => 'heifer'])
+            'camp' => 'Bo-kamp', 'last_weight_kg' => '310.0', 'class' => 'heifer', 'species' => 'cattle'])
         ->and([$rows['C3']['status'], $rows['C3']['camp']])->toBe(['sold', ''])
         ->and($rows['B2']['last_weight_kg'])->toBe('640.0');
 });
@@ -104,7 +104,7 @@ it('exports events oldest first, naming the animal on each row', function () {
     $rows = csvRows($this->get(kapi('/export/events.csv')));
 
     expect(array_map(fn ($r) => [$r['tag'], $r['kind']], $rows))->toBe([['A1', 'weight'], ['B2', 'weight'], ['C3', 'sale']])
-        ->and($rows[0]['weight_kg'])->toBe('310.0')
+        ->and($rows[0]['weight_kg'])->toBe('310.0')->and($rows[0]['species'])->toBe('cattle')
         ->and($rows[2]['note'])->toBe('Vleissentraal')
         ->and(array_keys($rows[0]))->toContain('camp', 'product', 'dose', 'withdrawal_days', 'temp_min_c', 'rain_mm', 'recorded_at');
 });

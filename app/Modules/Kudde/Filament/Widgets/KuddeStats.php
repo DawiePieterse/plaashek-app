@@ -33,8 +33,7 @@ class KuddeStats extends StatsOverviewWidget
         $season = DateRanges::seasonStart();
         $today = today();
         $alive = $state->alive();
-        $cutoff = $today->copy()->subDays(KuddeSettings::weighEveryDays());
-        $overdue = $alive->filter(fn ($a) => ! isset($state->weights[$a->id]) || $state->weights[$a->id][1]->lt($cutoff))->count();
+        $overdue = $alive->filter(fn ($a) => $state->needsWeighing($a))->count();
         $withdrawal = $alive->filter(fn ($a) => isset($state->withdrawal[$a->id]))->count();
         $born = $history->count('born', $season, $today);
         $sold = $history->count('sold', $season, $today);
