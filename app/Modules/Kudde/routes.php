@@ -19,6 +19,8 @@ Route::middleware(['web', 'auth', 'module:kudde', 'throttle:600,1'])->prefix('ku
     Route::post('/events/movement/bulk', [Api::class, 'moveAnimals'])->name('events.move');
     Route::post('/events/treatment/bulk', [Api::class, 'treatAnimals'])->name('events.treat');
     Route::post('/calvings', [Api::class, 'storeCalving'])->name('calvings.store');
+    Route::get('/litters', [Api::class, 'litters'])->name('litters');
+    Route::post('/litters/{litter}/wean', [Api::class, 'weanLitter'])->whereNumber('litter')->name('litters.wean');
 
     Route::get('/products', [Api::class, 'products'])->name('products');
     Route::get('/locations', [Api::class, 'locations'])->name('locations');
@@ -56,6 +58,8 @@ Route::middleware([SetFarmLocale::class, 'module:kudde', 'throttle:600,1'])->pre
         Route::post('/events/movement/bulk', [Api::class, 'moveAnimals'])->name('events.move');
         Route::post('/events/treatment/bulk', [Api::class, 'treatAnimals'])->name('events.treat');
         Route::post('/calvings', [Api::class, 'storeCalving'])->name('calvings.store');
+        Route::get('/litters', [Api::class, 'litters'])->name('litters');
+        Route::post('/litters/{litter}/wean', [Api::class, 'weanLitter'])->whereNumber('litter')->name('litters.wean');
         Route::get('/products', [Api::class, 'products'])->name('products');
         Route::get('/locations', [Api::class, 'locations'])->name('locations');
         Route::get('/camps', [Api::class, 'camps'])->name('camps');

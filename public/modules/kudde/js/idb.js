@@ -78,6 +78,12 @@ const IDB = (() => {
       if (worker && entry.payload && typeof entry.payload === "object" && !entry.payload.captured_by) {
         entry = { ...entry, payload: { ...entry.payload, captured_by: worker.number } };
       }
+      // And which species it was made in: tags are unique per species, and
+      // the phone may be switched to another before this is sent.
+      const species = typeof KuddeSpecies !== "undefined" ? KuddeSpecies.current() : null;
+      if (species && entry.payload && typeof entry.payload === "object" && !entry.payload.species) {
+        entry = { ...entry, payload: { ...entry.payload, species } };
+      }
       const store = await tx(OUTBOX, "readwrite");
       store.put({ synced: false, timestamp: new Date().toISOString(), ...entry });
       await done(store);

@@ -21,7 +21,8 @@ const EVENT_FIELD_CONFIG = {
 
 const STATUS_LABEL = { alive: "Alive", dead: "Dead", sold: "Sold" };
 
-let animals = [];       // last known full herd, from the server or the IDB cache
+let herdAll = [];       // last known full herd, every species, from the server or the IDB cache
+let animals = [];       // the part of it in the species this phone works in (species.js)
 let activeTag = null;   // tag shown in the detail modal, for the event modal to act on
 let activeEventKind = null;
 
@@ -41,12 +42,29 @@ try {
 // "weigh every" setting, sent with the page (FieldController). Worked
 // out here, from the cached herd, so the count and the worklist are right
 // offline and the moment a weighing is saved - not after the next sync.
+// Each species may set its own (sheep every month, cattle twice a year): the
+// server sends it on every animal, and species.js has it for one added here.
 const STALE_WEIGHT_DAYS = (window.PLAASHEK && window.PLAASHEK.weighEveryDays) || 182;
 
 function needsWeighing(a) {
   if (a.status !== "alive") return false;
   const days = Kudde.daysSince(a.last_weight_date);
-  return days === null || days > STALE_WEIGHT_DAYS;
+  const every = a.weigh_every_days || KuddeSpecies.get(KuddeSpecies.of(a)).weighEveryDays || STALE_WEIGHT_DAYS;
+  return days === null || days > every;
+}
+
+// The species' part of the herd: what the list, the counts, the tag checks
+// and every picker work from.
+function applySpecies() {
+  const code = KuddeSpecies.current();
+  animals = herdAll.filter((a) => KuddeSpecies.of(a) === code);
+}
+
+// A new animal from this phone: in the species it was made in.
+function addToHerd(a) {
+  const one = { species: KuddeSpecies.current(), ...a };
+  herdAll.push(one);
+  animals.push(one);
 }
 
 // ---------------------------------------------------------------------
@@ -93,6 +111,7 @@ const MODAL_CLOSERS = {
   animalDetailModal: closeAnimalDetail,
   eventModal: closeEventModal,
   calvingModal: closeCalving,
+  weanModal: closeWean,
   moveModal: closeMoveModal,
   sessionModal: closeSession,
   photoViewer: closePhotoViewer,
@@ -384,12 +403,13 @@ async function loadAnimals() {
     const signedOut = /^401\b/.test(String(herd.error.message || ""));
     if (!signedOut && !Kudde.isNetworkError(herd.error)) throw herd.error;
     if (!signedOut) Kudde.setOffline(true);
-    animals = await IDB.getCachedAnimals();
+    herdAll = await IDB.getCachedAnimals();
   } else {
-    animals = herd.list;
+    herdAll = herd.list;
     Kudde.setOffline(false);
-    await IDB.cacheAnimals(animals);
+    await IDB.cacheAnimals(herdAll);
   }
+  applySpecies();
   renderAnimalList();
   renderSummary();
 }
@@ -456,8 +476,8 @@ async function confirmAddAnimal() {
 
   if (saved._pending && payload.camp) saved.camp = payload.camp;
   logToday(`Added${payload.camp ? ` in ${payload.camp}` : ""}${saved._pending ? " (on phone)" : ""}`, tag);
-  animals.push(saved);
-  await IDB.cacheAnimals(animals);
+  addToHerd(saved);
+  await IDB.cacheAnimals(herdAll);
   renderAnimalList();
   renderSummary();
   closeAddAnimal();
@@ -480,6 +500,9 @@ async function openAnimalDetail(tag) {
      Kudde.inWithdrawal(animal.withdrawal_until) ? `Withdrawal to ${Kudde.fmtDate(animal.withdrawal_until)}` : null]
       .filter(Boolean).join(" · ");
   document.getElementById("calvedBtn").classList.toggle("hidden", animal.sex !== "female");
+  const sp = KuddeSpecies.get(KuddeSpecies.of(animal));
+  document.getElementById("calvedLabel").textContent = sp.code === "cattle" ? "Calved" : Kudde.classLabel(sp.birthWord || "birth");
+  showWeanButton(animal).catch(() => {});
   const pill = document.getElementById("detailStatusPill");
   pill.textContent = STATUS_LABEL[animal.status] || animal.status;
   pill.className = `text-xs font-semibold px-2 py-1 rounded-full status-pill-${animal.status}`;
@@ -769,7 +792,7 @@ async function saveEvent(fields) {
       const until = withdrawalEnd(payload.event_date, payload.withdrawal_days);
       if (!animal.withdrawal_until || until > animal.withdrawal_until) animal.withdrawal_until = until;
     }
-    await IDB.cacheAnimals(animals);
+    await IDB.cacheAnimals(herdAll);
   }
   if (payload.kind === "treatment") {
     KuddeProducts.remember({ product: payload.product, dose: payload.dose, withdrawal_days: payload.withdrawal_days });
@@ -863,6 +886,15 @@ function openCalving() {
   const dam = animals.find((a) => a.tag === activeTag);
   if (!dam) return;
   document.getElementById("calvingDam").textContent = dam.tag;
+  // Young tagged only at weaning (pigs): the birth is a count on the mother.
+  const litter = !!KuddeSpecies.get(KuddeSpecies.of(dam)).taggedAtWeaning;
+  document.getElementById("litterFields").classList.toggle("hidden", !litter);
+  document.getElementById("calfFields").classList.toggle("hidden", litter);
+  document.getElementById("calvingHint").textContent = litter
+    ? "Records the litter on the mother. The young get tags when they are weaned."
+    : "Records the birth on the mother and adds the young one, with her as the dam.";
+  document.getElementById("litterAlive").value = "";
+  document.getElementById("litterStillborn").value = "";
   setDate("calvingDate", Kudde.localDateStr());
   for (const id of ["calfTag", "calfName", "calfSireTag", "calvingNote"]) document.getElementById(id).value = "";
   // The cow's breed and camp are the calf's until told otherwise.
@@ -873,7 +905,7 @@ function openCalving() {
   // not inherited from whichever came first in the markup.
   setCalfSex(null);
   showModal("calvingModal");
-  document.getElementById("calfTag").focus();
+  document.getElementById(litter ? "litterAlive" : "calfTag").focus();
 }
 
 function closeCalving() {
@@ -885,6 +917,7 @@ async function confirmCalving() {
   if (!dam) return;
   const eventDate = document.getElementById("calvingDate").value;
   if (!eventDate) { Kudde.toast("Date is required"); return; }
+  if (KuddeSpecies.get(KuddeSpecies.of(dam)).taggedAtWeaning) { await confirmLitter(dam, eventDate); return; }
   const calfTag = document.getElementById("calfTag").value.trim();
   if (!calfTag) { Kudde.toast("The calf needs a tag number"); return; }
   if (animals.some((a) => a.tag.toLowerCase() === calfTag.toLowerCase())) { Kudde.toast(`Tag ${calfTag} is already in use`); return; }
@@ -922,8 +955,8 @@ async function confirmCalving() {
   if (calf) {
     // The server answers with the Animal row, which carries no camp; the
     // list needs it until the next full load.
-    animals.push({ ...calf, camp: camp || null });
-    await IDB.cacheAnimals(animals);
+    addToHerd({ ...calf, camp: camp || null });
+    await IDB.cacheAnimals(herdAll);
   }
   logToday(`Calved, calf ${calfTag}${pending ? " (on phone)" : ""}`, dam.tag);
   const campNote = KuddeCamps.newCampNote(camp);
@@ -933,6 +966,152 @@ async function confirmCalving() {
   if (campNote && !pending) await KuddeCamps.load();
   Kudde.toast(pending ? `Saved on this device - calf ${calfTag} will sync when online`
     : `Calf ${calfTag} added to ${dam.tag}${campNote}`);
+  openAnimalDetail(dam.tag);
+}
+
+// ---------------------------------------------------------------------
+// Litters: counted on the mother at birth, tagged at weaning (pigs)
+// ---------------------------------------------------------------------
+//
+// A sow farrows ten piglets nobody tags in the pen. The birth is a count on
+// her (born alive, stillborn); at weaning each piglet gets a tag and becomes
+// an animal with her as dam, born on the litter's date. The open litters are
+// cached like the camps, so the Wean button shows with no signal.
+
+const LITTERS_KEY = "kudde_field_litters";
+let weanLitter = null;   // the litter the weaning sheet is for
+
+async function confirmLitter(dam, eventDate) {
+  const alive = parseInt(document.getElementById("litterAlive").value, 10);
+  if (!(alive >= 0)) { Kudde.toast("How many were born alive?"); return; }
+  const stillborn = parseInt(document.getElementById("litterStillborn").value, 10) || 0;
+  const camp = document.getElementById("calvingCamp").value.trim();
+  const payload = {
+    dam_tag: dam.tag, event_date: eventDate,
+    litter: { born_alive: alive, stillborn, sire_tag: document.getElementById("calfSireTag").value.trim() || null },
+    camp, note: document.getElementById("calvingNote").value.trim(), client_uuid: uuid(),
+  };
+
+  let pending = false;
+  try {
+    await Kudde.api("/api/calvings", { method: "POST", body: payload });
+    Kudde.setOffline(false);
+  } catch (e) {
+    if (!Kudde.isNetworkError(e)) { Kudde.toast(Kudde.errorDetail(e)); return; }
+    Kudde.setOffline(true);
+    pending = true;
+    await IDB.enqueue({ uuid: payload.client_uuid, kind: "calving", payload });
+    refreshSyncStatusPill().catch(() => {});
+  }
+  logToday(`Litter of ${alive}${pending ? " (on phone)" : ""}`, dam.tag);
+  closeCalving();
+  Kudde.toast(pending ? "Saved on this device - will sync when online" : `Litter of ${alive} recorded on ${dam.tag}`);
+  openAnimalDetail(dam.tag);
+}
+
+// The mother's open litter, from the cached list. One recorded offline has
+// no id yet, so it can be weaned only once it has synced.
+async function openLitterOf(animal) {
+  const sp = KuddeSpecies.get(KuddeSpecies.of(animal));
+  if (!sp.taggedAtWeaning || animal.sex !== "female") return null;
+  const litters = await Kudde.cachedList(LITTERS_KEY, "/api/litters");
+  return litters.find((l) => l.dam_tag === animal.tag && l.species === sp.code && !l.weaned_on) || null;
+}
+
+async function showWeanButton(animal) {
+  const btn = document.getElementById("weanBtn");
+  btn.classList.add("hidden");
+  const litter = await openLitterOf(animal);
+  if (litter && activeTag === animal.tag) btn.classList.remove("hidden");
+}
+
+function addWeanRow(sex = null) {
+  const row = document.createElement("div");
+  row.className = "flex gap-2 wean-row";
+  row.innerHTML = `<input type="text" autocomplete="off" autocapitalize="characters" placeholder="Tag"
+      class="wean-tag flex-1 min-w-0 border border-slate-300 rounded-lg p-2 text-lg">
+    <div class="flex rounded-lg bg-slate-100 p-1 text-sm font-semibold">
+      <button type="button" class="seg-btn px-3" data-sex="female">F</button>
+      <button type="button" class="seg-btn px-3" data-sex="male">M</button>
+    </div>`;
+  row.querySelectorAll("[data-sex]").forEach((b) => b.addEventListener("click", () => {
+    row.dataset.sex = b.dataset.sex;
+    row.querySelectorAll("[data-sex]").forEach((o) => o.classList.toggle("active", o === b));
+  }));
+  if (sex) row.querySelector(`[data-sex="${sex}"]`).click();
+  document.getElementById("weanRows").appendChild(row);
+  row.querySelector(".wean-tag").focus();
+}
+
+async function openWean() {
+  const dam = animals.find((a) => a.tag === activeTag);
+  if (!dam) return;
+  weanLitter = await openLitterOf(dam);
+  if (!weanLitter) { Kudde.toast("No open litter on this animal"); return; }
+  document.getElementById("weanDam").textContent = dam.tag;
+  document.getElementById("weanHint").textContent =
+    `Born ${Kudde.fmtDate(weanLitter.born_on)}: ${weanLitter.born_alive} alive. Each young one weaned gets a tag, with ${dam.tag} as dam.`;
+  setDate("weanDate", Kudde.localDateStr());
+  document.getElementById("weanRows").innerHTML = "";
+  document.getElementById("weanFostered").value = "";
+  document.getElementById("weanCamp").value = dam.camp || "";
+  KuddeCamps.render(document.getElementById("weanCampChips"), document.getElementById("weanCamp"));
+  showModal("weanModal");
+  addWeanRow();
+}
+
+function closeWean() {
+  hideModal("weanModal");
+  weanLitter = null;
+}
+
+async function confirmWean() {
+  const dam = animals.find((a) => a.tag === activeTag);
+  if (!dam || !weanLitter) return;
+  const eventDate = document.getElementById("weanDate").value;
+  if (!eventDate) { Kudde.toast("Date is required"); return; }
+  const young = [];
+  for (const row of document.querySelectorAll("#weanRows .wean-row")) {
+    const tag = row.querySelector(".wean-tag").value.trim();
+    if (!tag) continue;
+    if (!row.dataset.sex) { Kudde.toast(`Female or male for ${tag}?`); return; }
+    if (animals.some((a) => a.tag.toLowerCase() === tag.toLowerCase()) || young.some((y) => y.tag.toLowerCase() === tag.toLowerCase())) {
+      Kudde.toast(`Tag ${tag} is already in use`); return;
+    }
+    young.push({ tag, sex: row.dataset.sex });
+  }
+  const camp = document.getElementById("weanCamp").value.trim();
+  const payload = {
+    litter_id: weanLitter.id, dam_tag: dam.tag, event_date: eventDate, young, camp,
+    fostered: parseInt(document.getElementById("weanFostered").value, 10) || 0, client_uuid: uuid(),
+  };
+
+  let pending = false;
+  try {
+    await Kudde.api(`/api/litters/${weanLitter.id}/wean`, { method: "POST", body: payload });
+    Kudde.setOffline(false);
+  } catch (e) {
+    if (!Kudde.isNetworkError(e)) { Kudde.toast(Kudde.errorDetail(e)); return; }
+    Kudde.setOffline(true);
+    pending = true;
+    await IDB.enqueue({ uuid: payload.client_uuid, kind: "wean", payload });
+    refreshSyncStatusPill().catch(() => {});
+  }
+  for (const y of young) {
+    addToHerd({ ...y, dam_tag: dam.tag, birth_date: weanLitter.born_on, status: "alive", camp: camp || null,
+                last_weight: null, last_weight_date: null, _pending: pending });
+  }
+  await IDB.cacheAnimals(herdAll);
+  // The litter is closed on this phone at once, so the button goes.
+  try {
+    const cached = JSON.parse(localStorage.getItem(LITTERS_KEY) || "[]");
+    localStorage.setItem(LITTERS_KEY, JSON.stringify(cached.map((l) => (l.id === weanLitter.id ? { ...l, weaned_on: eventDate } : l))));
+  } catch (_) { /* refetched next time */ }
+  logToday(`Weaned ${young.length}${pending ? " (on phone)" : ""}`, dam.tag);
+  closeWean();
+  renderAnimalList();
+  renderSummary();
+  Kudde.toast(pending ? "Saved on this device - will sync when online" : `${young.length} weaned from ${dam.tag}`);
   openAnimalDetail(dam.tag);
 }
 
@@ -1036,7 +1215,7 @@ async function confirmMove() {
   // The cached herd follows the move at once; loadAnimals then replaces it
   // with the server's copy when there is one.
   for (const a of animals) if (tags.includes(a.tag)) a.camp = location;
-  await IDB.cacheAnimals(animals);
+  await IDB.cacheAnimals(herdAll);
   closeMoveModal();
   await loadAnimals();   // reloads the camp list too, so a new camp has its chip next time
   Kudde.toast(pending
@@ -1183,6 +1362,7 @@ function outboxTags(entry) {
   const p = entry.payload || {};
   if (entry.kind === "bulk_movement") return p.tags || [];
   if (entry.kind === "calving") return [p.dam_tag, p.calf && p.calf.tag].filter(Boolean);
+  if (entry.kind === "wean") return [p.dam_tag, ...(p.young || []).map((y) => y.tag)].filter(Boolean);
   return p.tag ? [p.tag] : [];
 }
 
@@ -1228,7 +1408,8 @@ function describeOutboxEntry(entry) {
     return `Move of ${n} animal${n === 1 ? "" : "s"} to ${p.location}`;
   }
   if (entry.kind === "photo") return `Photo of ${p.tag}`;
-  if (entry.kind === "calving") return `Calving of ${p.dam_tag} (calf ${p.calf && p.calf.tag})`;
+  if (entry.kind === "calving") return p.litter ? `Litter of ${p.dam_tag}` : `Calving of ${p.dam_tag} (calf ${p.calf && p.calf.tag})`;
+  if (entry.kind === "wean") return `Weaning of ${p.dam_tag}'s litter`;
   return "A saved change";
 }
 
@@ -1289,6 +1470,8 @@ async function trySync() {
           await Kudde.api("/api/events/movement/bulk", { method: "POST", body: entry.payload });
         } else if (entry.kind === "calving") {
           await Kudde.api("/api/calvings", { method: "POST", body: entry.payload });
+        } else if (entry.kind === "wean") {
+          await Kudde.api(`/api/litters/${entry.payload.litter_id}/wean`, { method: "POST", body: entry.payload });
         } else if (entry.kind === "photo") {
           await Kudde.apiUpload(
             `/api/animals/${encodeURIComponent(entry.payload.tag)}/photos`,
@@ -1415,6 +1598,12 @@ async function init() {
     });
   });
   document.getElementById("cancelCalvingBtn").addEventListener("click", closeCalving);
+  document.getElementById("weanBtn").addEventListener("click", openWean);
+  document.getElementById("cancelWeanBtn").addEventListener("click", closeWean);
+  document.getElementById("confirmWeanBtn").addEventListener("click", () => { confirmWean().catch(() => {}); });
+  document.getElementById("weanAddRowBtn").addEventListener("click", () => addWeanRow());
+  KuddeSpecies.render(document.getElementById("speciesChips"));
+  KuddeSpecies.onChange(() => { applySpecies(); renderAnimalList(); renderSummary(); });
   document.getElementById("confirmCalvingBtn").addEventListener("click", () => { confirmCalving().catch(() => {}); });
   document.getElementById("calfFemaleBtn").addEventListener("click", () => setCalfSex("female"));
   document.getElementById("calfMaleBtn").addEventListener("click", () => setCalfSex("male"));

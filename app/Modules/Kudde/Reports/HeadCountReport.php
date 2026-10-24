@@ -2,7 +2,6 @@
 
 namespace App\Modules\Kudde\Reports;
 
-use App\Modules\Kudde\Support\AnimalClass;
 use App\Modules\Kudde\Support\HerdState;
 use App\Reports\ReportFilters;
 
@@ -22,8 +21,8 @@ class HeadCountReport extends KuddeReport
     public function columns(): array
     {
         $columns = ['camp' => __('kudde::ui.columns.camp')];
-        foreach (AnimalClass::CLASSES as $class) {
-            $columns[$class] = AnimalClass::label($class);
+        foreach (HerdState::load()->classLabels() as $label) {
+            $columns[$label] = $label;
         }
 
         return $columns + ['total' => __('kudde::ui.columns.total')];
@@ -32,12 +31,13 @@ class HeadCountReport extends KuddeReport
     public function rows(ReportFilters $filters): iterable
     {
         $state = HerdState::load();
-        $totals = array_fill_keys(AnimalClass::CLASSES, 0);
+        $labels = $state->classLabels();
+        $totals = array_fill_keys($labels, 0);
         foreach ($state->campGroups() as [$camp, $animals]) {
-            $row = ['camp' => $camp ?? __('kudde::ui.no_camp_yet')] + array_fill_keys(AnimalClass::CLASSES, 0);
+            $row = ['camp' => $camp ?? __('kudde::ui.no_camp_yet')] + array_fill_keys($labels, 0);
             foreach ($animals as $a) {
-                $row[$state->classOf($a)]++;
-                $totals[$state->classOf($a)]++;
+                $row[$state->classLabel($a)]++;
+                $totals[$state->classLabel($a)]++;
             }
             $row['total'] = count($animals);
             yield $row;

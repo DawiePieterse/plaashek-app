@@ -5,6 +5,7 @@ namespace App\Modules\Kudde\Support;
 use App\Models\Camp;
 use App\Modules\Kudde\Models\Animal;
 use App\Modules\Kudde\Models\AnimalEvent;
+use App\Modules\Kudde\Models\Species;
 use App\Support\CampNames;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -20,15 +21,13 @@ use Illuminate\Support\Collection;
  */
 class HerdState
 {
-    /** A birth event this long after her own birth is a calving, not her birth. Nothing calves at ten months. */
-    private const OWN_BIRTH_WINDOW_DAYS = 300;
-
     /**
      * @param  Collection<int, Animal>  $animals  every animal, whatever its status, in tag order
      * @param  array<int, string>  $locations  latest camp per animal id
      * @param  array<int, array{0: float, 1: Carbon}>  $weights  latest kg and date per animal id
      * @param  array<int, Carbon>  $withdrawal  last day still in withdrawal, per animal id
-     * @param  array<int, true>  $calved  animal ids with a calving on record
+     * @param  array<int, true>  $calved  animal ids with a birth they gave on record
+     * @param  Collection<int, Species>  $species  every species, keyed by id
      */
     private function __construct(
         public readonly Collection $animals,
@@ -36,13 +35,90 @@ class HerdState
         public readonly array $weights,
         public readonly array $withdrawal,
         public readonly array $calved,
+        public readonly Collection $species,
     ) {}
 
     public static function load(): self
     {
+        $species = Species::query()->inFarmOrder()->get()->keyBy('id');
         $animals = Animal::query()->get()->sort(fn (Animal $a, Animal $b) => Tags::compare($a->tag, $b->tag))->values();
 
-        return new self($animals, self::currentLocations(), self::lastWeights(), self::withdrawalUntil(), self::calvedIds($animals));
+        return new self($animals, self::currentLocations(), self::lastWeights(), self::withdrawalUntil(),
+            self::calvedIds($animals, $species), $species);
+    }
+
+    public function speciesOf(Animal $animal): Species
+    {
+        return $this->species[$animal->species_id];
+    }
+
+    /**
+     * The species the screens and counts are about: the ones the farm keeps, and any other an alive animal
+     * still belongs to (a species switched off with animals left), in the farm's order.
+     *
+     * @return Collection<int, Species>
+     */
+    public function speciesInPlay(): Collection
+    {
+        $withAnimals = $this->alive()->pluck('species_id')->unique()->all();
+
+        return $this->species->filter(fn (Species $s) => $s->enabled || in_array($s->id, $withAnimals, true))->values();
+    }
+
+    /** True when the farm keeps more than one species, so a class needs its species named beside it. */
+    public function mixed(): bool
+    {
+        return $this->speciesInPlay()->count() > 1;
+    }
+
+    public function roleOf(Animal $animal): string
+    {
+        return AnimalClass::role($animal, isset($this->calved[$animal->id]), $this->speciesOf($animal));
+    }
+
+    /**
+     * What a herd count calls the animal's class: "Koei", or "Skape: ooi" on a farm with more than one species.
+     * Counts and report columns are keyed by this, so two roles a species names alike (a sheep's ewe before and
+     * after lambing) count together, as the farmer counts them.
+     */
+    public function classLabel(Animal $animal): string
+    {
+        return self::label($this->speciesOf($animal), $this->roleOf($animal), $this->mixed());
+    }
+
+    /**
+     * Every class label the counts can have, in order (species, then role), so a summary card is stable.
+     *
+     * @return list<string>
+     */
+    public function classLabels(): array
+    {
+        $labels = [];
+        foreach ($this->speciesInPlay() as $species) {
+            foreach (Species::ROLES as $role) {
+                $labels[] = self::label($species, $role, $this->mixed());
+            }
+        }
+
+        return array_values(array_unique($labels));
+    }
+
+    private static function label(Species $species, string $role, bool $mixed): string
+    {
+        $name = mb_strtoupper(mb_substr($species->className($role), 0, 1)).mb_substr($species->className($role), 1);
+
+        return $mixed ? $species->name().': '.mb_strtolower($name) : $name;
+    }
+
+    /** Overdue a weighing by its species' rule: never weighed, or not within "weigh every". */
+    public function needsWeighing(Animal $animal): bool
+    {
+        if (! $animal->isAlive()) {
+            return false;
+        }
+        $last = $this->weights[$animal->id][1] ?? null;
+
+        return $last === null || $last->lt(today()->subDays($this->speciesOf($animal)->weighEveryDays()));
     }
 
     /** @return Collection<int, Animal> */
@@ -51,9 +127,10 @@ class HerdState
         return $this->animals->filter(fn (Animal $a) => $a->isAlive())->values();
     }
 
+    /** The animal's class in its species' words, in the farm's language, lower case ("vers", "ewe lamb"). */
     public function classOf(Animal $animal): string
     {
-        return AnimalClass::of($animal, isset($this->calved[$animal->id]));
+        return AnimalClass::of($animal, isset($this->calved[$animal->id]), $this->speciesOf($animal));
     }
 
     /**
@@ -74,6 +151,9 @@ class HerdState
             'last_weight_date' => $on?->toDateString(),
             'withdrawal_until' => isset($this->withdrawal[$animal->id]) ? $this->withdrawal[$animal->id]->toDateString() : null,
             'class' => $this->classOf($animal),
+            'class_role' => $this->roleOf($animal),
+            'species' => $this->speciesOf($animal)->code,
+            'weigh_every_days' => $this->speciesOf($animal)->weighEveryDays(),
         ];
     }
 
@@ -120,12 +200,21 @@ class HerdState
         return $groups;
     }
 
-    /** The animal with this tag, or a 404 the phones show as it is. */
-    public static function animalByTag(string $tag): Animal
+    /**
+     * The animal with this tag, of the species given, or a 404 the phones show as it is. Without a species the
+     * tag must name one animal: sheep 001 and cow 001 may both exist (tags are unique per species), and then the
+     * request must say which (409), rather than the herd guessing and recording on the wrong animal.
+     */
+    public static function animalByTag(string $tag, ?Species $species = null): Animal
     {
         $wanted = Tags::normalise($tag) ?? '';
+        $found = Animal::query()->where('tag', $wanted)->when($species, fn ($q, $s) => $q->where('species_id', $s->id))->get();
 
-        return Animal::query()->where('tag', $wanted)->first() ?? throw HerdException::noAnimal($tag);
+        if ($found->count() > 1) {
+            throw HerdException::ambiguousTag($wanted);
+        }
+
+        return $found->first() ?? throw HerdException::noAnimal($tag);
     }
 
     /**
@@ -135,16 +224,19 @@ class HerdState
      * @param  list<string>  $tags
      * @return list<Animal>
      */
-    public static function animalsByTags(array $tags): array
+    public static function animalsByTags(array $tags, ?Species $species = null): array
     {
         $wanted = array_map(fn ($t) => Tags::normalise((string) $t) ?? '', $tags);
-        $found = Animal::query()->whereIn('tag', $wanted)->get();
+        $found = Animal::query()->whereIn('tag', $wanted)->when($species, fn ($q, $s) => $q->where('species_id', $s->id))->get();
 
         $animals = [];
         foreach ($wanted as $i => $tag) {
             // Matched ignoring case, as the database's unique index does.
-            $animal = $found->first(fn (Animal $a) => mb_strtolower($a->tag) === mb_strtolower($tag));
-            $animals[] = $animal ?? throw HerdException::noAnimal((string) $tags[$i]);
+            $matches = $found->filter(fn (Animal $a) => mb_strtolower($a->tag) === mb_strtolower($tag));
+            if ($matches->count() > 1) {
+                throw HerdException::ambiguousTag($tag);
+            }
+            $animals[] = $matches->first() ?? throw HerdException::noAnimal((string) $tags[$i]);
         }
 
         return $animals;
@@ -236,25 +328,31 @@ class HerdState
      * date is her own).
      *
      * @param  Collection<int, Animal>  $animals  every animal, every status: a dam may be dead or sold
+     * @param  Collection<int, Species>  $species  keyed by id
      * @return array<int, true>
      */
-    private static function calvedIds(Collection $animals): array
+    private static function calvedIds(Collection $animals, Collection $species): array
     {
-        $byTag = $animals->keyBy(fn (Animal $a) => mb_strtolower($a->tag));
+        // A dam is looked for in the young one's own species: a ewe's lamb names a ewe, not a cow tagged alike.
+        $byTag = $animals->keyBy(fn (Animal $a) => $a->species_id.'|'.mb_strtolower($a->tag));
         $calved = [];
 
         foreach ($animals as $animal) {
-            $dam = $animal->dam_tag !== null ? $byTag->get(mb_strtolower($animal->dam_tag)) : null;
+            $dam = $animal->dam_tag !== null ? $byTag->get($animal->species_id.'|'.mb_strtolower($animal->dam_tag)) : null;
             if ($dam !== null) {
                 $calved[$dam->id] = true;
             }
         }
 
+        // A birth event on her dated more than one gestation after her own birth is a birth she gave: nothing
+        // gives birth sooner. One dated at her own birth is her own.
         $births = $animals->keyBy('id');
         AnimalEvent::query()->where('kind', AnimalEvent::BIRTH)->get(['animal_id', 'event_date'])
-            ->each(function (AnimalEvent $e) use (&$calved, $births) {
-                $own = $births->get($e->animal_id)?->birth_date;
-                if ($own !== null && $e->event_date->gt($own->copy()->addDays(self::OWN_BIRTH_WINDOW_DAYS))) {
+            ->each(function (AnimalEvent $e) use (&$calved, $births, $species) {
+                $animal = $births->get($e->animal_id);
+                $own = $animal?->birth_date;
+                $gestation = $animal !== null ? ($species[$animal->species_id]->gestation_days ?? 283) : 283;
+                if ($own !== null && $e->event_date->gt($own->copy()->addDays($gestation))) {
                     $calved[$e->animal_id] = true;
                 }
             });

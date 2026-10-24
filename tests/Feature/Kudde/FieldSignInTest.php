@@ -5,6 +5,7 @@
 use App\Models\User;
 use App\Models\Worker;
 use App\Modules\Kudde\Models\AnimalEvent;
+use App\Modules\Kudde\Models\Species;
 use App\Modules\ModuleRegistry;
 use Illuminate\Testing\TestResponse;
 
@@ -149,4 +150,16 @@ it('serves the field app and its service worker, and nothing for a farm without 
 
 it('lets the page use the camera', function () {
     expect($this->get('/kudde/field')->headers->get('Permissions-Policy'))->toContain('camera=(self)');
+});
+
+it('weans a litter from the field app', function () {
+    Species::query()->where('code', 'pigs')->update(['enabled' => true]);
+    $token = scanCard('001')->json('token');
+    $this->postJson('/kudde/field/api/animals', ['tag' => 'S1', 'sex' => 'female', 'species' => 'pigs'], fieldApi($token))->assertOk();
+    $this->postJson('/kudde/field/api/calvings', ['dam_tag' => 'S1', 'species' => 'pigs', 'event_date' => recently(),
+        'litter' => ['born_alive' => 6]], fieldApi($token))->assertOk();
+    $id = $this->getJson('/kudde/field/api/litters', fieldApi($token))->assertOk()->json('0.id');
+
+    $this->postJson("/kudde/field/api/litters/{$id}/wean", ['event_date' => today()->toDateString(), 'species' => 'pigs',
+        'young' => [['tag' => 'P1', 'sex' => 'female']]], fieldApi($token))->assertOk()->assertJsonPath('litter.weaned', 1);
 });

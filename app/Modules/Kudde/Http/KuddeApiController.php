@@ -9,7 +9,8 @@ use App\Models\User;
 use App\Models\Worker;
 use App\Modules\Kudde\Models\Animal;
 use App\Modules\Kudde\Models\AnimalEvent;
-use App\Modules\Kudde\Support\AnimalClass;
+use App\Modules\Kudde\Models\Litter;
+use App\Modules\Kudde\Models\Species;
 use App\Modules\Kudde\Support\FieldSession;
 use App\Modules\Kudde\Support\Herd;
 use App\Modules\Kudde\Support\HerdException;
@@ -47,22 +48,25 @@ class KuddeApiController extends Controller
     /** q matches the start of a tag or anywhere in a name: the two things a farmer has in hand. */
     public function animals(Request $request): JsonResponse
     {
-        $request->validate(['status' => ['nullable', Rule::in(Animal::STATUSES)], 'q' => ['nullable', 'string']]);
+        $request->validate(['status' => ['nullable', Rule::in(Animal::STATUSES)], 'q' => ['nullable', 'string'],
+            'species' => ['nullable', 'string']]);
+        $species = $this->species($request);
         $state = HerdState::load();
         $needle = mb_strtolower((string) $request->query('q', ''));
         $status = $request->query('status');
 
         $animals = $state->animals
             ->filter(fn (Animal $a) => $status === null || $a->status === $status)
+            ->filter(fn (Animal $a) => $species === null || $a->species_id === $species->id)
             ->filter(fn (Animal $a) => $needle === '' || str_starts_with(mb_strtolower($a->tag), $needle)
                 || str_contains(mb_strtolower($a->name), $needle));
 
         return response()->json($animals->map(fn (Animal $a) => $state->describe($a))->values());
     }
 
-    public function animal(string $tag): JsonResponse
+    public function animal(Request $request, string $tag): JsonResponse
     {
-        $animal = HerdState::animalByTag($tag);
+        $animal = HerdState::animalByTag($tag, $this->species($request));
 
         return response()->json(HerdState::load()->describe($animal));
     }
@@ -84,7 +88,7 @@ class KuddeApiController extends Controller
     public function updateAnimal(Request $request, string $tag): JsonResponse
     {
         $this->mayWrite($request);
-        $animal = HerdState::animalByTag($tag);
+        $animal = HerdState::animalByTag($tag, $this->species($request));
         $fields = $request->validate($this->animalRules() + [
             'sex' => ['sometimes', Rule::in(Animal::SEXES)],
             'status' => ['sometimes', Rule::in(Animal::STATUSES)],
@@ -94,9 +98,9 @@ class KuddeApiController extends Controller
     }
 
     /** One animal's history, newest first; the id breaks ties so a muster's events keep their order. */
-    public function animalEvents(string $tag): JsonResponse
+    public function animalEvents(Request $request, string $tag): JsonResponse
     {
-        $animal = HerdState::animalByTag($tag);
+        $animal = HerdState::animalByTag($tag, $this->species($request));
 
         return response()->json($animal->events()->orderByDesc('event_date')->orderByDesc('id')->get());
     }
@@ -159,26 +163,77 @@ class KuddeApiController extends Controller
             $fields['client_uuid'] ?? null));
     }
 
+    /**
+     * A birth. `calf` (one, what the field app has always sent), or `young` (twins, triplets), or `litter`
+     * (counted on the mother, the young tagged at weaning), or young and a litter together.
+     */
     public function storeCalving(Request $request): JsonResponse
     {
         $this->mayWrite($request);
         $fields = $request->validate([
             'dam_tag' => ['required', 'string'],
             'event_date' => ['required', 'date_format:Y-m-d'],
-            'calf' => ['required', 'array'],
-            'calf.tag' => ['required', 'string', 'max:50'],
-            'calf.sex' => ['required', Rule::in(Animal::SEXES)],
-            'calf.name' => ['nullable', 'string', 'max:100'],
-            'calf.breed' => ['nullable', 'string', 'max:100'],
-            'calf.sire_tag' => ['nullable', 'string', 'max:50'],
-            'calf.castrated' => ['nullable', 'boolean'],
+            'calf' => ['nullable', 'array'],
+            'calf.tag' => ['required_with:calf', 'string', 'max:50'],
+            'calf.sex' => ['required_with:calf', Rule::in(Animal::SEXES)],
+            'young' => ['nullable', 'array', 'max:20'],
+            'young.*.tag' => ['required', 'string', 'max:50'],
+            'young.*.sex' => ['required', Rule::in(Animal::SEXES)],
+            'litter' => ['nullable', 'array'],
+            'litter.born_alive' => ['required_with:litter', 'integer', 'min:0', 'max:40'],
+            'litter.stillborn' => ['nullable', 'integer', 'min:0', 'max:40'],
+            'litter.sire_tag' => ['nullable', 'string', 'max:50'],
             'camp' => ['nullable', 'string', 'max:100'],
             'note' => ['nullable', 'string', 'max:900'],
             'client_uuid' => ['nullable', 'string', 'max:70'],
-        ]);
+        ] + $this->youngRules('calf.') + $this->youngRules('young.*.'));
 
-        return response()->json($this->herd($request)->recordCalving($fields['dam_tag'], $fields['event_date'], $fields['calf'],
-            (string) ($fields['camp'] ?? ''), (string) ($fields['note'] ?? ''), $fields['client_uuid'] ?? null));
+        $all = array_values(array_merge(isset($fields['calf']) ? [$fields['calf']] : [], $fields['young'] ?? []));
+
+        return response()->json($this->herd($request)->recordBirth($fields['dam_tag'], $fields['event_date'], $all,
+            $fields['litter'] ?? null, (string) ($fields['camp'] ?? ''), (string) ($fields['note'] ?? ''), $fields['client_uuid'] ?? null));
+    }
+
+    /** Litters not weaned yet, oldest first: the pens to wean next. `?all=1` adds the weaned ones. */
+    public function litters(Request $request): JsonResponse
+    {
+        $litters = Litter::query()->with('dam.species')
+            ->when(! $request->boolean('all'), fn ($q) => $q->whereNull('weaned_on'))
+            ->orderBy('born_on')->orderBy('id')->get();
+
+        return response()->json($litters->map(fn (Litter $l) => $l->describe())->all());
+    }
+
+    /** The litter by id, looked up here: the field API's routes run without route-model binding. */
+    public function weanLitter(Request $request, int $litter): JsonResponse
+    {
+        $this->mayWrite($request);
+        $litter = Litter::query()->with('dam.species')->findOrFail($litter);
+        $fields = $request->validate([
+            'event_date' => ['required', 'date_format:Y-m-d'],
+            'young' => ['present', 'array', 'max:40'],
+            'young.*.tag' => ['required', 'string', 'max:50'],
+            'young.*.sex' => ['required', Rule::in(Animal::SEXES)],
+            'camp' => ['nullable', 'string', 'max:100'],
+            'fostered' => ['nullable', 'integer', 'min:-40', 'max:40'],
+            'client_uuid' => ['nullable', 'string', 'max:70'],
+        ] + $this->youngRules('young.*.'));
+
+        $result = $this->herd($request)->weanLitter($litter, $fields['event_date'], $fields['young'],
+            (string) ($fields['camp'] ?? ''), (int) ($fields['fostered'] ?? 0), $fields['client_uuid'] ?? null);
+
+        return response()->json(['litter' => $result['litter']->describe(), 'young' => $result['young'], 'replayed' => $result['replayed']]);
+    }
+
+    /** @return array<string, list<string>> */
+    private function youngRules(string $prefix): array
+    {
+        return [
+            $prefix.'name' => ['nullable', 'string', 'max:100'],
+            $prefix.'breed' => ['nullable', 'string', 'max:100'],
+            $prefix.'sire_tag' => ['nullable', 'string', 'max:50'],
+            $prefix.'castrated' => ['nullable', 'boolean'],
+        ];
     }
 
     /**
@@ -319,8 +374,8 @@ class KuddeApiController extends Controller
             ->orderByDesc('event_date')->orderByDesc('id')->limit(10)->get()
             ->map(fn (AnimalEvent $e) => $e->toArray() + ['tag' => $e->animal?->tag, 'name' => $e->animal?->name]);
 
-        $cutoff = today()->subDays(KuddeSettings::weighEveryDays());
-        $needsWeighing = $alive->filter(fn (Animal $a) => ! isset($state->weights[$a->id]) || $state->weights[$a->id][1]->lt($cutoff));
+        // Each species by its own "weigh every" (Kudde's setting unless the species sets one).
+        $needsWeighing = $alive->filter(fn (Animal $a) => $state->needsWeighing($a));
 
         // The ones that must not go to the sale this week, soonest clear first.
         $inWithdrawal = $alive->filter(fn (Animal $a) => isset($state->withdrawal[$a->id]))
@@ -329,9 +384,9 @@ class KuddeApiController extends Controller
             ->map(fn (Animal $a) => ['tag' => $a->tag, 'name' => $a->name, 'until' => $state->withdrawal[$a->id]->toDateString()]);
 
         // So many cows, so many heifers: every class present, at zero if need be, so the card is stable.
-        $classCounts = array_fill_keys(AnimalClass::CLASSES, 0);
+        $classCounts = array_fill_keys(array_map('mb_strtolower', $state->classLabels()), 0);
         foreach ($alive as $animal) {
-            $classCounts[$state->classOf($animal)]++;
+            $classCounts[mb_strtolower($state->classLabel($animal))]++;
         }
 
         return response()->json([
@@ -349,12 +404,12 @@ class KuddeApiController extends Controller
     {
         $state = HerdState::load();
 
-        return $this->csv('kudde-animals', ['tag', 'name', 'breed', 'sex', 'class', 'castrated', 'birth_date', 'sire_tag',
+        return $this->csv('kudde-animals', ['species', 'tag', 'name', 'breed', 'sex', 'class', 'castrated', 'birth_date', 'sire_tag',
             'dam_tag', 'status', 'camp', 'last_weight_kg', 'last_weight_date', 'withdrawal_until'],
             $state->animals->map(function (Animal $a) use ($state) {
                 $d = $state->describe($a);
 
-                return [$a->tag, $a->name, $a->breed, $a->sex, $d['class'], $a->castrated ? 'yes' : '',
+                return [$d['species'], $a->tag, $a->name, $a->breed, $a->sex, $d['class'], $a->castrated ? 'yes' : '',
                     $a->birth_date?->toDateString(), $a->sire_tag, $a->dam_tag, $a->status, $d['camp'],
                     $d['last_weight'] === null ? null : number_format($d['last_weight'], 1, '.', ''),
                     $d['last_weight_date'], $d['withdrawal_until']];
@@ -366,10 +421,10 @@ class KuddeApiController extends Controller
     {
         $one = fn (?float $v) => $v === null ? null : number_format($v, 1, '.', '');
 
-        return $this->csv('kudde-events', ['tag', 'name', 'kind', 'event_date', 'weight_kg', 'camp', 'product', 'dose',
+        return $this->csv('kudde-events', ['species', 'tag', 'name', 'kind', 'event_date', 'weight_kg', 'camp', 'product', 'dose',
             'withdrawal_days', 'note', 'temp_min_c', 'temp_max_c', 'rain_mm', 'recorded_at'],
-            AnimalEvent::query()->with('animal:id,tag,name')->orderBy('event_date')->orderBy('id')->get()
-                ->map(fn (AnimalEvent $e) => [$e->animal?->tag, $e->animal?->name, $e->kind, $e->event_date->toDateString(),
+            AnimalEvent::query()->with('animal:id,species_id,tag,name', 'animal.species:id,code')->orderBy('event_date')->orderBy('id')->get()
+                ->map(fn (AnimalEvent $e) => [$e->animal?->species->code, $e->animal?->tag, $e->animal?->name, $e->kind, $e->event_date->toDateString(),
                     $one($e->value), $e->location, $e->product, $e->dose, $e->withdrawal_days, $e->note,
                     $one($e->weather_temp_min), $one($e->weather_temp_max), $one($e->weather_rain),
                     $e->created_at->format('Y-m-d\TH:i:s')]));
@@ -437,7 +492,7 @@ class KuddeApiController extends Controller
         $worker = FieldSession::worker($request);
 
         if ($worker === null) {
-            return $this->herd->by($request->user()?->id);
+            return $this->herd->by($request->user()?->id)->of($this->species($request));
         }
 
         $capturedBy = $request->input('captured_by');
@@ -445,7 +500,21 @@ class KuddeApiController extends Controller
             $worker = Worker::query()->where('number', $capturedBy)->first() ?? $worker;
         }
 
-        return $this->herd->by(null, $worker->id);
+        return $this->herd->by(null, $worker->id)->of($this->species($request));
+    }
+
+    /**
+     * The species a request names (`species`, its code), or null. An unknown code is refused rather than
+     * guessed: recording on the wrong species' animal is worse than a phone asking again.
+     */
+    private function species(Request $request): ?Species
+    {
+        $code = $request->input('species');
+        if (! is_string($code) || $code === '') {
+            return null;
+        }
+
+        return Species::byCode($code) ?? throw ValidationException::withMessages(['species' => __('kudde::ui.choose_species')]);
     }
 
     /** Office viewers read only. A signed-in worker captures: that is what the field app is for. */

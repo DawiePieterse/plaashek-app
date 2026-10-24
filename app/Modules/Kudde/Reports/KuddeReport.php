@@ -4,7 +4,8 @@ namespace App\Modules\Kudde\Reports;
 
 use App\Models\Camp;
 use App\Modules\Kudde\Models\AnimalEvent;
-use App\Modules\Kudde\Support\AnimalClass;
+use App\Modules\Kudde\Models\Species;
+use App\Modules\Kudde\Support\HerdState;
 use App\Reports\Report;
 use App\Reports\ReportFilters;
 use Filament\Forms\Components\Select;
@@ -42,7 +43,7 @@ abstract class KuddeReport extends Report
     /** @return Builder<AnimalEvent> */
     protected static function events(ReportFilters $filters, ?string $kind = null): Builder
     {
-        return AnimalEvent::query()->with(['animal', 'worker', 'user'])
+        return AnimalEvent::query()->with(['animal.species', 'worker', 'user'])
             ->when($kind, fn ($q) => $q->where('kind', $kind))
             ->when($filters->from, fn ($q, $from) => $q->where('event_date', '>=', $from->toDateString()))
             ->when($filters->to, fn ($q, $to) => $q->where('event_date', '<=', $to->toDateString()))
@@ -57,8 +58,18 @@ abstract class KuddeReport extends Report
 
     protected static function classFilter(): Select
     {
+        $labels = HerdState::load()->classLabels();
+
         return Select::make('class')->label(__('kudde::ui.columns.class'))->placeholder(__('kudde::ui.reports.all'))
-            ->options(array_combine(AnimalClass::CLASSES, array_map([AnimalClass::class, 'label'], AnimalClass::CLASSES)));
+            ->options(array_combine($labels, $labels));
+    }
+
+    /** Only offered on a farm with more than one species. */
+    protected static function speciesFilter(): Select
+    {
+        return Select::make('species')->label(__('kudde::ui.columns.species'))->placeholder(__('kudde::ui.reports.all'))
+            ->options(Species::enabled()->mapWithKeys(fn (Species $s) => [$s->code => $s->name()])->all())
+            ->visible(fn () => Species::enabled()->count() > 1);
     }
 
     protected static function who(AnimalEvent $e): ?string

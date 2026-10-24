@@ -4,6 +4,7 @@ namespace App\Modules\Kudde\Http;
 
 use App\Http\Controllers\Controller;
 use App\Models\Worker;
+use App\Modules\Kudde\Models\Species;
 use App\Modules\Kudde\Support\FieldSession;
 use App\Modules\Kudde\Support\KuddeSettings;
 use App\Support\Farm;
@@ -23,7 +24,7 @@ class FieldController extends Controller
     /** Shell files the service worker keeps. Changing any of them changes the cache name. */
     private const SHELL = [
         'css/styles.css',
-        'js/api.js', 'js/app.js', 'js/camps.js', 'js/idb.js', 'js/products.js', 'js/ptr.js', 'js/scan.js', 'js/signin.js',
+        'js/api.js', 'js/app.js', 'js/camps.js', 'js/idb.js', 'js/products.js', 'js/ptr.js', 'js/scan.js', 'js/signin.js', 'js/species.js',
         'vendor/jsqr/jsQR.js', 'vendor/tailwind.js',
         'vendor/fontawesome/css/all.min.css', 'vendor/fontawesome/webfonts/fa-solid-900.woff2',
         'icons/icon-180.png', 'icons/icon-192.png',
@@ -37,6 +38,16 @@ class FieldController extends Controller
                 't' => trans('kudde::ui.field'),
                 'serviceWorker' => route('kudde.field.sw', absolute: false),
                 'weighEveryDays' => KuddeSettings::weighEveryDays(),
+                // The species the farm keeps, with what the phone needs to class and weigh an animal offline.
+                'species' => Species::enabled()->map(fn (Species $s) => [
+                    'code' => $s->code,
+                    'name' => $s->name(),
+                    'birthWord' => $s->birthWord(),
+                    'classNames' => collect(Species::ROLES)->mapWithKeys(fn (string $role) => [$role => $s->className($role)])->all(),
+                    'youngUntilDays' => $s->young_until_days,
+                    'weighEveryDays' => $s->weighEveryDays(),
+                    'taggedAtWeaning' => $s->young_tagged_at_weaning,
+                ])->values()->all(),
             ],
             'version' => self::version(),
         ]);

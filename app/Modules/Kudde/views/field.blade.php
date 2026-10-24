@@ -24,6 +24,7 @@
 <script src="{{ $asset('js/products.js') }}"></script>
 <script src="{{ $asset('vendor/jsqr/jsQR.js') }}"></script>
 <script src="{{ $asset('js/scan.js') }}"></script>
+<script src="{{ $asset('js/species.js') }}"></script>
 <script src="{{ $asset('js/idb.js') }}"></script>
 <script src="{{ $asset('js/signin.js') }}"></script>
 </head>
@@ -65,6 +66,8 @@
          read standing next to the live ones. Typing in the search box
          searches every animal regardless, so a sold animal's tag still
          finds it. -->
+    <!-- Which species: only on a farm keeping more than one (species.js). -->
+    <div id="speciesChips" class="hidden flex rounded-lg bg-slate-100 p-1 text-sm font-semibold" role="group" aria-label="Species"></div>
     <div class="flex rounded-lg bg-slate-100 p-1 text-sm font-semibold" role="group" aria-label="Which animals to list">
       <button id="filterAliveBtn" type="button" class="seg-btn active flex-1">Alive</button>
       <button id="filterAllBtn" type="button" class="seg-btn flex-1">All</button>
@@ -201,7 +204,9 @@
       <button class="action-btn" data-kind="movement"><i class="fa-solid fa-arrows-turn-right event-icon-movement"></i>Move</button>
       <!-- On a cow this opens the calving screen (the birth event on the
            cow AND the new calf, in one go); hidden on a male. -->
-      <button class="action-btn" id="calvedBtn" data-kind="birth"><i class="fa-solid fa-baby event-icon-birth"></i>Calved</button>
+      <button class="action-btn" id="calvedBtn" data-kind="birth"><i class="fa-solid fa-baby event-icon-birth"></i><span id="calvedLabel">Calved</span></button>
+      <!-- A sow with a litter not yet weaned: tag the young now (weaning). -->
+      <button class="action-btn hidden" id="weanBtn"><i class="fa-solid fa-tags event-icon-birth"></i>Wean</button>
       <!-- Outlined red: these two take the animal out of the live herd,
            and they sit a thumb-width from Move and Calved. -->
       <button class="action-btn action-btn-danger" data-kind="sale"><i class="fa-solid fa-hand-holding-dollar"></i>Sale</button>
@@ -307,10 +312,22 @@
 <div id="calvingModal" class="fixed inset-0 bg-black/50 hidden p-4 z-50 overflow-y-auto">
   <div class="bg-white rounded-xl p-5 w-full max-w-sm m-auto">
     <div class="font-bold text-lg mb-1"><span id="calvingDam"></span> calved</div>
-    <div class="text-xs text-slate-500 mb-3">Records the calving on the cow and adds the calf, with her as the dam.</div>
+    <div class="text-xs text-slate-500 mb-3" id="calvingHint">Records the calving on the cow and adds the calf, with her as the dam.</div>
     <label class="text-xs text-slate-500">Date *</label>
     <div class="chip-row" data-date-chips="calvingDate"></div>
     <input id="calvingDate" type="date" class="w-full border border-slate-300 rounded-lg p-3 text-lg mb-2">
+    <!-- Young tagged only at weaning (pigs): the birth is counted on the mother. -->
+    <div id="litterFields" class="hidden grid grid-cols-2 gap-2">
+      <div>
+        <label class="text-xs text-slate-500">Born alive *</label>
+        <input id="litterAlive" type="number" inputmode="numeric" min="0" max="40" class="w-full border border-slate-300 rounded-lg p-3 text-lg mb-2">
+      </div>
+      <div>
+        <label class="text-xs text-slate-500">Stillborn</label>
+        <input id="litterStillborn" type="number" inputmode="numeric" min="0" max="40" class="w-full border border-slate-300 rounded-lg p-3 text-lg mb-2">
+      </div>
+    </div>
+    <div id="calfFields">
     <label class="text-xs text-slate-500">Calf tag *</label>
     <input id="calfTag" type="text" autocomplete="off" autocapitalize="characters" class="w-full border border-slate-300 rounded-lg p-3 text-lg mb-2">
     <label class="text-xs text-slate-500">Calf sex *</label>
@@ -330,6 +347,7 @@
     </div>
     <label class="text-xs text-slate-500">Breed</label>
     <input id="calfBreed" type="text" class="w-full border border-slate-300 rounded-lg p-3 text-lg mb-2">
+    </div>
     <label class="text-xs text-slate-500">Camp</label>
     <div id="calvingCampChips" class="chip-row"></div>
     <input id="calvingCamp" type="text" placeholder="Camp name" class="w-full border border-slate-300 rounded-lg p-3 text-lg mb-2" autocomplete="off">
@@ -338,6 +356,29 @@
     <div class="flex gap-2 mt-3">
       <button id="cancelCalvingBtn" class="flex-1 rounded-lg py-3 bg-slate-100">Cancel</button>
       <button id="confirmCalvingBtn" class="flex-1 kudde-btn-primary rounded-lg py-3 font-semibold">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Weaning a litter: each young one gets a tag now, with the mother as dam. -->
+<div id="weanModal" class="fixed inset-0 bg-black/50 hidden p-4 z-50 overflow-y-auto">
+  <div class="bg-white rounded-xl p-5 w-full max-w-sm m-auto">
+    <div class="font-bold text-lg mb-1">Wean <span id="weanDam"></span>'s litter</div>
+    <div class="text-xs text-slate-500 mb-3" id="weanHint"></div>
+    <label class="text-xs text-slate-500">Date *</label>
+    <div class="chip-row" data-date-chips="weanDate"></div>
+    <input id="weanDate" type="date" class="w-full border border-slate-300 rounded-lg p-3 text-lg mb-2">
+    <label class="text-xs text-slate-500">Young weaned, a tag each</label>
+    <div id="weanRows" class="space-y-2 mb-2"></div>
+    <button id="weanAddRowBtn" type="button" class="w-full btn-outline rounded-lg py-2 font-semibold mb-2"><i class="fa-solid fa-plus"></i> Another</button>
+    <label class="text-xs text-slate-500">Fostered <span class="text-slate-400">(on minus off)</span></label>
+    <input id="weanFostered" type="number" inputmode="numeric" min="-40" max="40" class="w-full border border-slate-300 rounded-lg p-3 text-lg mb-2">
+    <label class="text-xs text-slate-500">Camp</label>
+    <div id="weanCampChips" class="chip-row"></div>
+    <input id="weanCamp" type="text" placeholder="Camp name" class="w-full border border-slate-300 rounded-lg p-3 text-lg mb-2" autocomplete="off">
+    <div class="flex gap-2 mt-3">
+      <button id="cancelWeanBtn" class="flex-1 rounded-lg py-3 bg-slate-100">Cancel</button>
+      <button id="confirmWeanBtn" class="flex-1 kudde-btn-primary rounded-lg py-3 font-semibold">Save</button>
     </div>
   </div>
 </div>
