@@ -11,16 +11,18 @@ A separate Afrihost Linux hosting package for Plaashek, on the same ClientZone l
 | What | Value |
 |---|---|
 | Account | Active (ClientZone > Web Hosting > plaashek.co.za) |
-| Server | `arno.aserv.co.za` |
+| Server | `kregg.aserv.co.za`, shared IP `197.242.159.145` (cPanel home page; ClientZone's "IP Address" shows the GitHub Pages DNS answer, not the server) |
 | Domain | `plaashek.co.za`, expires 12 Sep 2027 |
-| Package, cPanel user, database limit | not recorded yet |
+| Package, cPanel user, database limit | Bronze Pro, `plaashq0j3u3`, 20 databases |
 
 Bronze Pro (20 databases) holds about 19 farms beside the demo farm; Silver Pro (100 databases) after that.
 
 **DNS (24 October 2026):** `www.plaashek.co.za` resolves to `185.199.111.153`, a GitHub Pages address: the
 landing page is still served from the `Plaashek` repo, not from this server. That can stay. Each farm's
-subdomain (`<farm>.plaashek.co.za`, and `demo.`) needs its own A record pointing at `arno.aserv.co.za`'s IP,
-added in cPanel > Zone Editor (or ClientZone DNS), before AutoSSL can issue its certificate.
+subdomain (`<farm>.plaashek.co.za`, and `demo.`) needs its own A record pointing at `197.242.159.145`,
+added in ClientZone > Hosting > plaashek.co.za > Hosting Settings > DNS Editor (this cPanel has no Zone Editor; the
+DNS Editor only works inside ClientZone's pop-up, not when its URL is opened directly), before AutoSSL can issue its
+certificate. Run AutoSSL again (cPanel > SSL/TLS > Status) after adding it.
 
 **Weather data:** leave `OPEN_METEO_API_KEY` blank while Plaashek is in development and marketing (the free
 API). Set it on every farm once farms pay.
@@ -45,10 +47,12 @@ scripts/build-afrihost.sh        # build/afrihost/plaashek.zip
 3. **Database:** cPanel > Database Wizard: database and user `<farm>`, ALL PRIVILEGES on that database only.
    That user must never be granted another farm's database.
 4. **Files:** File Manager > `plaashek-<farm>/`: upload `plaashek.zip`, extract it, delete the zip.
-5. **Settings:** create `.env` from `.env.afrihost.example`: `APP_URL`, the database, `APP_KEY`
+5. **Settings:** (File Manager hides dotfiles: tick Show Hidden Files in its Settings; chmod `.env` to 0600; avoid `#`, `$` and quotes in `DB_PASSWORD`) create `.env` from `.env.afrihost.example`: `APP_URL`, the database, `APP_KEY`
    (`php artisan key:generate --show`), `APP_LOCALE`, `OPEN_METEO_API_KEY`. Put the `APP_KEY` in the owner's
    password manager too.
-6. **Tables and farm:** cPanel > Terminal: `cd ~/plaashek-<farm> && php artisan migrate --force && php artisan
+6. **Tables and farm:** this account has **no shell** (cPanel Terminal says "Shell access is not enabled"). Run
+   `migrate` from a one-off cron job (`cd ~/plaashek-<farm> && /usr/local/bin/ea-php83 artisan migrate --force > ~/migrate.log 2>&1`,
+   every minute, read the log, then delete the job), then open the subdomain for the setup page. With a shell, cPanel > Terminal: `cd ~/plaashek-<farm> && php artisan migrate --force && php artisan
    farm:create`. Without a terminal, open the subdomain after migrating: the first-run setup page asks the same.
 7. **Cron:** cPanel > Cron Jobs, every minute:
    `cd ~/plaashek-<farm> && php artisan schedule:run >> /dev/null 2>&1` (the nightly weather fill).
