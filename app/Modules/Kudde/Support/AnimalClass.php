@@ -22,6 +22,12 @@ class AnimalClass
     /** Every class, in the order a herd summary lists them. */
     public const CLASSES = ['cow', 'heifer', 'bull', 'steer', 'heifer calf', 'bull calf', 'steer calf'];
 
+    /** The class as the farm's screens and reports say it ("Vers", "Heifer calf"); the key stays English. */
+    public static function label(string $class): string
+    {
+        return __('kudde::ui.class.'.str_replace(' ', '_', $class));
+    }
+
     public static function of(Animal $animal, bool $calved, ?Carbon $today = null): string
     {
         $today ??= today();

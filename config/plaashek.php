@@ -15,6 +15,10 @@ return [
         KuddeModule::class,
     ],
 
+    // The release this install runs, shown in the office's top bar: the VERSION file the build script writes
+    // into the zip (date and commit), or "dev" in a clone.
+    'version' => is_file(base_path('VERSION')) ? trim((string) file_get_contents(base_path('VERSION'))) : 'dev',
+
     // The support account farm:create adds to every farm, so Plaashek can help without borrowing a login.
     'staff_email' => env('PLAASHEK_STAFF_EMAIL', 'staff@plaashek.co.za'),
 

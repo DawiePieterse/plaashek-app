@@ -22,8 +22,25 @@ use Illuminate\Support\Facades\DB;
  */
 class Herd
 {
+    private ?int $userId = null;
+
+    private ?int $workerId = null;
+
     /** What an animal's status becomes when an event of this kind is recorded. */
     private const STATUS_ON_EVENT = [AnimalEvent::DEATH => Animal::DEAD, AnimalEvent::SALE => Animal::SOLD];
+
+    /**
+     * The herd as written by this office user or worker: every record it writes is stamped with them. A copy,
+     * because Herd is a singleton and one request's person must never leak into the next's.
+     */
+    public function by(?int $userId = null, ?int $workerId = null): self
+    {
+        $herd = clone $this;
+        $herd->userId = $userId;
+        $herd->workerId = $workerId;
+
+        return $herd;
+    }
 
     /**
      * A new animal, and, if a camp is named, the event that places it there: a movement dated today for an
@@ -33,9 +50,9 @@ class Herd
      * @param  array{tag: string, sex: string, name?: string|null, breed?: string|null, birth_date?: string|null,
      *               sire_tag?: string|null, dam_tag?: string|null, castrated?: bool|null, camp?: string|null}  $fields
      */
-    public function createAnimal(array $fields, ?int $userId = null): Animal
+    public function createAnimal(array $fields): Animal
     {
-        return DB::transaction(fn () => $this->newAnimal($fields, AnimalEvent::MOVEMENT, today(), 'Entered into Kudde', null, $userId));
+        return DB::transaction(fn () => $this->newAnimal($fields, AnimalEvent::MOVEMENT, today(), 'Entered into Kudde', null));
     }
 
     /**
@@ -45,7 +62,7 @@ class Herd
      *
      * @param  array<string, mixed>  $fields
      */
-    public function updateAnimal(Animal $animal, array $fields, ?int $userId = null): Animal
+    public function updateAnimal(Animal $animal, array $fields): Animal
     {
         $allowed = ['name', 'breed', 'sex', 'birth_date', 'sire_tag', 'dam_tag', 'castrated', 'status'];
         $fields = array_intersect_key($fields, array_flip($allowed));
@@ -84,14 +101,14 @@ class Herd
      *               location?: string|null, product?: string|null, dose?: string|null,
      *               withdrawal_days?: int|null, client_uuid?: string|null}  $fields
      */
-    public function recordEvent(array $fields, ?int $userId = null): AnimalEvent
+    public function recordEvent(array $fields): AnimalEvent
     {
         $uuid = $fields['client_uuid'] ?? null;
         if ($uuid !== null && ($already = AnimalEvent::query()->where('client_uuid', $uuid)->first()) !== null) {
             return $already;
         }
 
-        return DB::transaction(function () use ($fields, $uuid, $userId) {
+        return DB::transaction(function () use ($fields, $uuid) {
             $animal = HerdState::animalByTag($fields['tag']);
             $kind = $fields['kind'];
             $isTreatment = $kind === AnimalEvent::TREATMENT;
@@ -109,7 +126,7 @@ class Herd
                 'dose' => $isTreatment ? self::tidy($fields['dose'] ?? '') : '',
                 'withdrawal_days' => $isTreatment ? ($fields['withdrawal_days'] ?? null) : null,
                 'client_uuid' => $uuid,
-                'user_id' => $userId,
+                ...$this->actor(),
             ]));
             $event->save();
             // Read back, so every column is in the answer (the weather nulls included): the phone stores it.
@@ -131,16 +148,16 @@ class Herd
      * @param  list<string>  $tags
      * @return list<AnimalEvent>
      */
-    public function moveAnimals(array $tags, string $date, string $location, string $note = '', ?string $uuid = null, ?int $userId = null): array
+    public function moveAnimals(array $tags, string $date, string $location, string $note = '', ?string $uuid = null): array
     {
-        return DB::transaction(function () use ($tags, $date, $location, $note, $uuid, $userId) {
+        return DB::transaction(function () use ($tags, $date, $location, $note, $uuid) {
             $animals = HerdState::animalsByTags($tags);
             $camp = $this->location(AnimalEvent::MOVEMENT, $location);
             if ($camp === '') {
                 throw new HerdException(__('kudde::ui.move_needs_camp'), 422);
             }
 
-            return $this->batch($animals, $uuid, $userId, [
+            return $this->batch($animals, $uuid, [
                 'kind' => AnimalEvent::MOVEMENT, 'event_date' => $date, 'location' => $camp, 'note' => trim($note),
             ]);
         });
@@ -153,9 +170,9 @@ class Herd
      * @param  array{product?: string|null, dose?: string|null, withdrawal_days?: int|null, note?: string|null}  $treatment
      * @return list<AnimalEvent>
      */
-    public function treatAnimals(array $tags, string $date, array $treatment, ?string $uuid = null, ?int $userId = null): array
+    public function treatAnimals(array $tags, string $date, array $treatment, ?string $uuid = null): array
     {
-        return DB::transaction(fn () => $this->batch(HerdState::animalsByTags($tags), $uuid, $userId, [
+        return DB::transaction(fn () => $this->batch(HerdState::animalsByTags($tags), $uuid, [
             'kind' => AnimalEvent::TREATMENT,
             'event_date' => $date,
             'note' => trim((string) ($treatment['note'] ?? '')),
@@ -175,7 +192,7 @@ class Herd
      *               castrated?: bool|null}  $calf
      * @return array{dam_event: AnimalEvent, calf: Animal|null, replayed: bool}
      */
-    public function recordCalving(string $damTag, string $date, array $calf, string $camp = '', string $note = '', ?string $uuid = null, ?int $userId = null): array
+    public function recordCalving(string $damTag, string $date, array $calf, string $camp = '', string $note = '', ?string $uuid = null): array
     {
         if ($uuid !== null && ($already = AnimalEvent::query()->where('client_uuid', $uuid)->first()) !== null) {
             $calfAnimal = Animal::query()->where('tag', Tags::normalise($calf['tag']) ?? '')->first();
@@ -183,7 +200,7 @@ class Herd
             return ['dam_event' => $already, 'calf' => $calfAnimal, 'replayed' => true];
         }
 
-        return DB::transaction(function () use ($damTag, $date, $calf, $camp, $note, $uuid, $userId) {
+        return DB::transaction(function () use ($damTag, $date, $calf, $camp, $note, $uuid) {
             $dam = HerdState::animalByTag($damTag);
             if ($dam->sex !== Animal::FEMALE) {
                 throw new HerdException(__('kudde::ui.male_cannot_calve', ['tag' => $dam->tag]), 422);
@@ -193,7 +210,7 @@ class Herd
             $calfAnimal = $this->newAnimal(
                 [...$calf, 'dam_tag' => $dam->tag, 'birth_date' => $date, 'camp' => $camp],
                 AnimalEvent::BIRTH, Carbon::parse($date), 'Born to '.$dam->tag,
-                $uuid !== null ? $uuid.':calf' : null, $userId, alwaysPlace: true,
+                $uuid !== null ? $uuid.':calf' : null, alwaysPlace: true,
             );
 
             $note = trim($note);
@@ -204,7 +221,7 @@ class Herd
                 'location' => $camp === '' ? '' : CampNames::ensure($camp)->name,
                 'note' => 'Calf '.$calfAnimal->tag.($note === '' ? '' : ' - '.$note),
                 'client_uuid' => $uuid,
-                'user_id' => $userId,
+                ...$this->actor(),
             ]));
             $damEvent->save();
             $damEvent->refresh();
@@ -241,7 +258,7 @@ class Herd
      *
      * @param  array<string, mixed>  $fields
      */
-    private function newAnimal(array $fields, string $placedKind, Carbon $on, string $note, ?string $uuid, ?int $userId, bool $alwaysPlace = false): Animal
+    private function newAnimal(array $fields, string $placedKind, Carbon $on, string $note, ?string $uuid, bool $alwaysPlace = false): Animal
     {
         $tag = Tags::normalise($fields['tag'] ?? null) ?? throw new HerdException(__('kudde::ui.tag_required'), 422);
 
@@ -258,7 +275,7 @@ class Herd
             'sire_tag' => Tags::normalise($fields['sire_tag'] ?? null),
             'dam_tag' => Tags::normalise($fields['dam_tag'] ?? null),
             'castrated' => (bool) ($fields['castrated'] ?? false),
-            'user_id' => $userId,
+            ...$this->actor(),
         ]);
 
         $camp = CampNames::normalise($fields['camp'] ?? '');
@@ -270,7 +287,7 @@ class Herd
                 'location' => $camp === '' ? '' : CampNames::ensure($camp)->name,
                 'note' => $note,
                 'client_uuid' => $uuid,
-                'user_id' => $userId,
+                ...$this->actor(),
             ]))->save();
         }
 
@@ -286,7 +303,7 @@ class Herd
      * @param  array<string, mixed>  $shared
      * @return list<AnimalEvent>
      */
-    private function batch(array $animals, ?string $uuid, ?int $userId, array $shared): array
+    private function batch(array $animals, ?string $uuid, array $shared): array
     {
         $already = [];
         if ($uuid !== null) {
@@ -304,7 +321,7 @@ class Herd
 
                 continue;
             }
-            $event = $this->stamp(new AnimalEvent([...$shared, 'animal_id' => $animal->id, 'client_uuid' => $key, 'user_id' => $userId]), $weather, true);
+            $event = $this->stamp(new AnimalEvent([...$shared, 'animal_id' => $animal->id, 'client_uuid' => $key, ...$this->actor()]), $weather, true);
             $event->save();
             $events[] = $event->refresh();
         }
@@ -339,6 +356,12 @@ class Herd
         }
 
         return $event;
+    }
+
+    /** @return array{user_id: int|null, worker_id: int|null} */
+    private function actor(): array
+    {
+        return ['user_id' => $this->userId, 'worker_id' => $this->workerId];
     }
 
     private static function tidy(?string $value): string

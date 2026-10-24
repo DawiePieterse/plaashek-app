@@ -122,8 +122,8 @@ it('needs a signed-in office user for the cards', function () {
     $this->get('/workers/cards?ids=1')->assertRedirect('/admin/login');
 });
 
-it('puts the workers under Farm settings in the menu', function () {
+it('puts the workers under Settings in the menu', function () {
     $this->actingAs(farm());
 
-    $this->get('/admin/workers')->assertOk()->assertSee('Farm settings')->assertSee('Workers');
+    $this->get('/admin/workers')->assertOk()->assertSee('Settings')->assertSee('Workers');
 });

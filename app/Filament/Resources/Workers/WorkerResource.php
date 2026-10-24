@@ -38,7 +38,7 @@ class WorkerResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedIdentification;
 
-    protected static ?int $navigationSort = 110;
+    protected static ?int $navigationSort = 101;
 
     protected static ?string $slug = 'workers';
 
@@ -46,7 +46,7 @@ class WorkerResource extends Resource
 
     public static function getNavigationGroup(): string
     {
-        return __('plaashek.settings.title');
+        return __('plaashek.settings.group');
     }
 
     public static function getNavigationLabel(): string

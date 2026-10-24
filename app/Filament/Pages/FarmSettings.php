@@ -19,8 +19,10 @@ use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
 
 /**
- * Farm settings (PLAN.md section 2.1), owner only: what the farm is called, where it is and how its screens
- * speak. The position is what the Weather module forecasts for. Each change is written to the audit log.
+ * Farm settings (PLAN.md section 2.1), owner only: what sets the farm up, namely what it is called, who farms it,
+ * where it is and how its screens speak. The position is shared by every module (the Weather forecast, the
+ * weather on Kudde's events). Each module's own settings are its own screen in the same menu group
+ * (App\Filament\ModuleSettings); the workers and the camps are listed there too. Changes go to the audit log.
  *
  * @property-read Schema $form
  */
@@ -30,7 +32,9 @@ class FarmSettings extends Page
 
     protected static ?int $navigationSort = 100;
 
-    protected string $view = 'filament.pages.farm-settings';
+    protected static ?string $slug = 'settings/farm';
+
+    protected string $view = 'filament.pages.settings-form';
 
     /** @var array<string, mixed> */
     public array $data = [];
@@ -43,14 +47,12 @@ class FarmSettings extends Page
         'latitude' => Farm::LATITUDE,
         'longitude' => Farm::LONGITUDE,
         'language' => Farm::LANGUAGE,
-        'season_start_month' => Farm::SEASON_START_MONTH,
-        'frost_threshold' => Farm::FROST_THRESHOLD,
     ];
 
     /** Farm settings is a menu group: this page (the farm itself) and the worker register. */
     public static function getNavigationGroup(): string
     {
-        return __('plaashek.settings.title');
+        return __('plaashek.settings.group');
     }
 
     public static function getNavigationLabel(): string
@@ -80,19 +82,12 @@ class FarmSettings extends Page
         // only shown here, and saved with the next Save, so nothing changes behind the owner's back.
         $data['farmer'] ??= User::query()->where('role', User::OWNER)->orderBy('id')->value('name');
         $data['language'] = $farm->language();
-        $data['season_start_month'] = (string) $farm->seasonStartMonth();
-        $data['frost_threshold'] = $farm->frostThreshold();
 
         $this->form->fill($data);
     }
 
     public function form(Schema $schema): Schema
     {
-        $months = [];
-        foreach (range(1, 12) as $m) {
-            $months[(string) $m] = ucfirst(now()->setDate(2000, $m, 1)->locale(app()->getLocale())->translatedFormat('F'));
-        }
-
         return $schema->components([
             Section::make(__('plaashek.settings.farm'))->schema([
                 TextInput::make('name')->label(__('plaashek.settings.name'))->required()->maxLength(100),
@@ -115,16 +110,6 @@ class FarmSettings extends Page
                     // A phone standing on the farm knows where it is; that beats looking up coordinates.
                     View::make('filament.pages.partials.use-my-location'),
                 ]),
-            Section::make(__('plaashek.settings.weather'))->schema([
-                Grid::make(['default' => 1, 'sm' => 2])->schema([
-                    Select::make('season_start_month')->label(__('plaashek.settings.season_start_month'))
-                        ->helperText(__('plaashek.settings.season_start_hint'))
-                        ->options($months)->required()->native(),
-                    TextInput::make('frost_threshold')->label(__('plaashek.settings.frost_threshold'))
-                        ->helperText(__('plaashek.settings.frost_hint'))
-                        ->numeric()->minValue(-10)->maxValue(10)->step(0.5)->suffix('°C')->required(),
-                ]),
-            ]),
         ])->statePath('data');
     }
 

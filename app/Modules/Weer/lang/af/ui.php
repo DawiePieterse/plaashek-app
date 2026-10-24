@@ -4,6 +4,8 @@
 // (public/modules/weer/js/fields.js) en die vinnige opsomming se sinne is nog net in Engels.
 return [
     'title' => 'Weer',
+    'settings_title' => 'Weer',
+    'tile_rain_7d' => 'reën, laaste 7 dae',
     'back' => 'Kantoor',
     'refresh' => 'Verfris',
     'settings' => 'Instellings',
@@ -97,4 +99,25 @@ return [
     'Snow' => 'Sneeu',
     'Heavy snow' => 'Swaar sneeu',
     'Thunderstorm' => 'Donderstorm',
+    'open_forecast' => 'Voorspelling en jare',
+    'fill_history' => 'Haal geskiedenis',
+    'fill_history_hint' => 'Haal die plaas se daaglikse weer vir hierdie seisoen en die vorige, sodat die grafieke en verslae so ver terug gaan. Neem \'n paar sekondes.',
+    'history_filled' => 'Weergeskiedenis gehaal: :n dae op rekord.',
+    'history_failed' => 'Die geskiedenis kon nie gehaal word nie. Probeer later weer.',
+    'stats' => [
+        'rain_7' => 'Reën, laaste 7 dae', 'rain_30' => 'Reën, laaste 30 dae', 'rain_season' => 'Reën hierdie seisoen',
+        'since' => 'Sedert :date', 'incomplete' => 'rekord onvolledig', 'frost_nights' => 'Rypnagte, 30 dae',
+        'frost_hint' => 'Op of onder :t °C', 'extremes' => 'Warmste / koudste, 30 dae', 'extremes_hint' => 'Hoogste dag, laagste nag',
+        'et0_7' => 'Verdamping, 7 dae', 'et0_hint' => 'ET0: wat \'n gewas in hierdie weer gebruik',
+    ],
+    'charts' => [
+        'last_30' => 'Die laaste 30 dae', 'rain' => 'Reën mm', 'max' => 'Hoogste °C', 'min' => 'Laagste °C',
+        'season' => 'Reën per maand', 'this_season' => 'Hierdie seisoen', 'last_season' => 'Verlede seisoen',
+        'temperature' => 'Temperatuur per maand', 'avg_max' => 'Gemiddelde hoogste', 'avg_min' => 'Gemiddelde laagste',
+    ],
+    'reports' => [
+        'daily' => 'Daaglikse weer', 'monthly' => 'Weer per maand', 'date' => 'Datum', 'month' => 'Maand', 'days' => 'Dae',
+        'max' => 'Hoogste °C', 'min' => 'Laagste °C', 'rain' => 'Reën mm', 'wind' => 'Wind km/h', 'avg_max' => 'Gem. hoogste °C',
+        'avg_min' => 'Gem. laagste °C', 'frost' => 'Rypnagte',
+    ],
 ];

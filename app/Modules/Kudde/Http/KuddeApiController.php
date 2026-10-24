@@ -6,12 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Camp;
 use App\Models\User;
+use App\Models\Worker;
 use App\Modules\Kudde\Models\Animal;
 use App\Modules\Kudde\Models\AnimalEvent;
 use App\Modules\Kudde\Support\AnimalClass;
+use App\Modules\Kudde\Support\FieldSession;
 use App\Modules\Kudde\Support\Herd;
 use App\Modules\Kudde\Support\HerdException;
 use App\Modules\Kudde\Support\HerdState;
+use App\Modules\Kudde\Support\KuddeSettings;
 use App\Modules\Kudde\Support\Tags;
 use App\Support\CampNames;
 use Illuminate\Http\JsonResponse;
@@ -22,16 +25,14 @@ use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * Kudde's JSON API, old Kudde's routers on the Herd and HerdState classes. Signed-in office users only until
- * the field shell (phase 6) gives phones their own sign-in; a viewer reads and exports but never writes.
+ * Kudde's JSON API, old Kudde's routers on the Herd and HerdState classes. Two doors to the same methods:
+ * /kudde/api for the signed-in office (a viewer reads and exports but never writes) and /kudde/field/api for a
+ * phone signed in by a worker's card scan (FieldSession).
  */
 class KuddeApiController extends Controller
 {
-    /**
-     * Past this many days without a weighing, an alive animal needs attention. Six months: a farmer weighing
-     * every muster or two isn't nagged, and an animal that fell through the cracks is still caught.
-     */
-    public const STALE_WEIGHT_DAYS = 182;
+    /** The default of Kudde's "weigh every" setting (Support\KuddeSettings). */
+    public const STALE_WEIGHT_DAYS = KuddeSettings::DEFAULT_WEIGH_EVERY_DAYS;
 
     /** Most events any one request returns. Nothing asks for more than a screenful. */
     private const MAX_EVENT_LIMIT = 500;
@@ -69,13 +70,15 @@ class KuddeApiController extends Controller
     public function storeAnimal(Request $request): JsonResponse
     {
         $this->mayWrite($request);
-        $animal = $this->herd->createAnimal($request->validate($this->animalRules() + [
+        $animal = $this->herd($request)->createAnimal($request->validate($this->animalRules() + [
             'tag' => ['required', 'string', 'max:50'],
             'sex' => ['required', Rule::in(Animal::SEXES)],
             'camp' => ['nullable', 'string', 'max:100'],
-        ]), $request->user()?->id);
+        ]));
 
-        return response()->json($animal->refresh());
+        // Described as the herd list describes it (camp, class, last weight), because the phone puts this answer
+        // straight into its cached list: a bare record showed a new animal as "No camp" until the next reload.
+        return response()->json(HerdState::load()->describe($animal->refresh()));
     }
 
     public function updateAnimal(Request $request, string $tag): JsonResponse
@@ -87,7 +90,7 @@ class KuddeApiController extends Controller
             'status' => ['sometimes', Rule::in(Animal::STATUSES)],
         ]);
 
-        return response()->json($this->herd->updateAnimal($animal, $fields, $request->user()?->id));
+        return response()->json($this->herd($request)->updateAnimal($animal, $fields));
     }
 
     /** One animal's history, newest first; the id breaks ties so a muster's events keep their order. */
@@ -120,7 +123,7 @@ class KuddeApiController extends Controller
             throw ValidationException::withMessages(['value' => __('kudde::ui.weight_needs_kg')]);
         }
 
-        return response()->json($this->herd->recordEvent($fields, $request->user()?->id));
+        return response()->json($this->herd($request)->recordEvent($fields));
     }
 
     /** Recent events across the herd, newest first: the office's activity feed. */
@@ -143,9 +146,8 @@ class KuddeApiController extends Controller
         $this->mayWrite($request);
         $fields = $request->validate($this->batchRules() + ['location' => ['nullable', 'string', 'max:100']]);
 
-        return response()->json($this->herd->moveAnimals(self::tags($fields), $fields['event_date'],
-            (string) ($fields['location'] ?? ''), (string) ($fields['note'] ?? ''), $fields['client_uuid'] ?? null,
-            $request->user()?->id));
+        return response()->json($this->herd($request)->moveAnimals(self::tags($fields), $fields['event_date'],
+            (string) ($fields['location'] ?? ''), (string) ($fields['note'] ?? ''), $fields['client_uuid'] ?? null));
     }
 
     public function treatAnimals(Request $request): JsonResponse
@@ -153,8 +155,8 @@ class KuddeApiController extends Controller
         $this->mayWrite($request);
         $fields = $request->validate($this->batchRules() + $this->treatmentRules());
 
-        return response()->json($this->herd->treatAnimals(self::tags($fields), $fields['event_date'], $fields,
-            $fields['client_uuid'] ?? null, $request->user()?->id));
+        return response()->json($this->herd($request)->treatAnimals(self::tags($fields), $fields['event_date'], $fields,
+            $fields['client_uuid'] ?? null));
     }
 
     public function storeCalving(Request $request): JsonResponse
@@ -175,9 +177,8 @@ class KuddeApiController extends Controller
             'client_uuid' => ['nullable', 'string', 'max:70'],
         ]);
 
-        return response()->json($this->herd->recordCalving($fields['dam_tag'], $fields['event_date'], $fields['calf'],
-            (string) ($fields['camp'] ?? ''), (string) ($fields['note'] ?? ''), $fields['client_uuid'] ?? null,
-            $request->user()?->id));
+        return response()->json($this->herd($request)->recordCalving($fields['dam_tag'], $fields['event_date'], $fields['calf'],
+            (string) ($fields['camp'] ?? ''), (string) ($fields['note'] ?? ''), $fields['client_uuid'] ?? null));
     }
 
     /**
@@ -212,7 +213,7 @@ class KuddeApiController extends Controller
 
     public function camps(Request $request): JsonResponse
     {
-        $counts = $this->aliveCounts();
+        $counts = HerdState::aliveByCamp();
 
         return response()->json(Camp::query()->inFarmOrder()
             ->when(! $request->boolean('include_archived'), fn ($q) => $q->where('archived', false))
@@ -235,7 +236,7 @@ class KuddeApiController extends Controller
         $camp = CampNames::ensure($name);
         AuditLog::record('camp.created', $camp->name);
 
-        return response()->json($this->presentCamp($camp, $this->aliveCounts()));
+        return response()->json($this->presentCamp($camp, HerdState::aliveByCamp()));
     }
 
     public function updateCamp(Request $request, Camp $camp): JsonResponse
@@ -257,7 +258,7 @@ class KuddeApiController extends Controller
             $camp->name = $name;
         }
 
-        $counts = $this->aliveCounts();
+        $counts = HerdState::aliveByCamp();
         if (($fields['archived'] ?? false) && ! $camp->archived) {
             $held = $counts[CampNames::fold($before['name'])] ?? 0;
             if ($held > 0) {
@@ -318,7 +319,7 @@ class KuddeApiController extends Controller
             ->orderByDesc('event_date')->orderByDesc('id')->limit(10)->get()
             ->map(fn (AnimalEvent $e) => $e->toArray() + ['tag' => $e->animal?->tag, 'name' => $e->animal?->name]);
 
-        $cutoff = today()->subDays(self::STALE_WEIGHT_DAYS);
+        $cutoff = today()->subDays(KuddeSettings::weighEveryDays());
         $needsWeighing = $alive->filter(fn (Animal $a) => ! isset($state->weights[$a->id]) || $state->weights[$a->id][1]->lt($cutoff));
 
         // The ones that must not go to the sale this week, soonest clear first.
@@ -425,29 +426,37 @@ class KuddeApiController extends Controller
         return array_map('strval', $tags);
     }
 
-    private function mayWrite(Request $request): void
-    {
-        $user = $request->user();
-        abort_if(! $user instanceof User || $user->role === User::VIEWER, 403);
-    }
-
     /**
-     * Alive animals per camp, keyed by the folded name so a count finds its camp whatever was typed.
-     *
-     * @return array<string, int>
+     * Who is writing: the worker whose card signed this phone in (FieldSession), or the office user. A record
+     * queued offline names the worker who captured it (`captured_by`), because the phone may have changed
+     * hands, or days, before it synced; the card scan is the whole of a worker's sign-in, so that name is
+     * trusted as far as the scan is.
      */
-    private function aliveCounts(): array
+    private function herd(Request $request): Herd
     {
-        $where = HerdState::currentLocations();
-        $counts = [];
-        foreach (Animal::query()->where('status', Animal::ALIVE)->pluck('id') as $id) {
-            if (($where[$id] ?? '') !== '') {
-                $key = CampNames::fold($where[$id]);
-                $counts[$key] = ($counts[$key] ?? 0) + 1;
-            }
+        $worker = FieldSession::worker($request);
+
+        if ($worker === null) {
+            return $this->herd->by($request->user()?->id);
         }
 
-        return $counts;
+        $capturedBy = $request->input('captured_by');
+        if (is_string($capturedBy) && $capturedBy !== '' && $capturedBy !== $worker->number) {
+            $worker = Worker::query()->where('number', $capturedBy)->first() ?? $worker;
+        }
+
+        return $this->herd->by(null, $worker->id);
+    }
+
+    /** Office viewers read only. A signed-in worker captures: that is what the field app is for. */
+    private function mayWrite(Request $request): void
+    {
+        if (FieldSession::worker($request) !== null) {
+            return;
+        }
+
+        $user = $request->user();
+        abort_if(! $user instanceof User || $user->role === User::VIEWER, 403);
     }
 
     /**

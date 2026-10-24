@@ -88,7 +88,7 @@ it('will not archive a camp that holds animals', function () {
 });
 
 it('enters a new animal straight into a camp', function () {
-    addAnimal('A1', ['camp' => 'Bo-kamp']);
+    expect(addAnimal('A1', ['camp' => 'Bo-kamp'])['camp'])->toBe('Bo-kamp');
     addAnimal('A2');
 
     $events = $this->getJson(kapi('/animals/A1/events'))->json();

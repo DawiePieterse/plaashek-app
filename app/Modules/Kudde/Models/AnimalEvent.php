@@ -2,6 +2,8 @@
 
 namespace App\Modules\Kudde\Models;
 
+use App\Models\User;
+use App\Models\Worker;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
@@ -28,6 +30,7 @@ use Illuminate\Support\Carbon;
  * @property float|null $weather_temp_min
  * @property float|null $weather_rain
  * @property int|null $user_id
+ * @property int|null $worker_id
  * @property Carbon $created_at
  */
 class AnimalEvent extends Model
@@ -74,5 +77,17 @@ class AnimalEvent extends Model
     public function animal(): BelongsTo
     {
         return $this->belongsTo(Animal::class);
+    }
+
+    /** @return BelongsTo<Worker, $this> */
+    public function worker(): BelongsTo
+    {
+        return $this->belongsTo(Worker::class);
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 }

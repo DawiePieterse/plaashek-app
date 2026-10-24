@@ -171,6 +171,26 @@ class HerdState
         return $latest;
     }
 
+    /**
+     * Alive animals per camp, keyed by the folded name so a count finds its camp whatever was typed. What the
+     * camp lists show, and why a camp that still holds animals is not archived.
+     *
+     * @return array<string, int>
+     */
+    public static function aliveByCamp(): array
+    {
+        $where = self::currentLocations();
+        $counts = [];
+        foreach (Animal::query()->where('status', Animal::ALIVE)->pluck('id') as $id) {
+            if (($where[$id] ?? '') !== '') {
+                $key = CampNames::fold($where[$id]);
+                $counts[$key] = ($counts[$key] ?? 0) + 1;
+            }
+        }
+
+        return $counts;
+    }
+
     /** @return array<int, array{0: float, 1: Carbon}> */
     private static function lastWeights(): array
     {

@@ -125,13 +125,26 @@ on Bronze Pro), and the Open-Meteo commercial plan from the first paying farm (c
 - [x] **Farm settings** page (owner only): farm name, farmer, phone, GPS position (typed, or "Use my location" on
   a phone at the farm), language (`af`/`en`), season start month, frost threshold. Module settings appear here
   as each module adds them
+- [x] **Home** (owner's sketch, 25 October 2026): one tile per module with its key number (workers active,
+  rain in the last 7 days, alive animals), each opening the module; the farm's name, the weather now and the
+  release in the top bar
+- [x] **Module screens** (owner's call, 25 October 2026): each Home tile opens its module's screen with its key
+  numbers, charts and lists, and a Reports picker (standard periods: this month, last month, this season, last
+  season, this year, last 12 months, chosen dates; plus each report's own filters) that exports to Excel or PDF.
+  Kudde: herd, births and losses this season, withdrawal, weighing due, daily gain; the herd over 12 months, by
+  class, by camp, average weights; 7 reports. Weather: rain 7/30 days and season, frost nights, extremes, ET0;
+  the last 30 days, rain by month against last season, temperature by month; 2 reports. Workers: 4 numbers and
+  the register report. The top bar shows an online pill and the release
+- [x] **Settings menu group**: Farm settings holds what sets the farm up (name, farmer, phone, language,
+  position), with Workers beside it; each module has its own settings screen there (Weather: season start,
+  frost; Kudde: weigh every, the camps (nested under it), the field app's QR code)
 - [x] `af`/`en` screens (Filament's own buttons and messages stay English: Filament ships no Afrikaans)
 - [x] Audit log of settings changes and staff access
 
 **Built with Kudde**
 - [ ] Settings: licence status and dates
 - [ ] Modules switched on per farm (`farm:modules`), each with its own licence status
-- [ ] One office tab per enabled module, plus Farm settings (§5)
+- [ ] One office tab per enabled module, plus the Settings group (§5)
 - [ ] Field users with username/cell + PIN, the devices page, disable a person or a phone (§5)
 - [ ] Field PWA shell: sign-in, change user, home screen with one tile per enabled module, the outbox and sync (§7)
 - [x] **Worker register, minimal** (owner's call, 25 October 2026), under Farm settings: number, first names,
@@ -170,17 +183,67 @@ Everything the farm-PC Kudde does today is the v1 checklist. Tick off here as bu
 **Photos**
 - [ ] Per animal, idempotent upload by `client_uuid`, resized on the phone, served only through the app
 
+**Field app, opened by a worker's card** (owner's call, 25 October 2026)
+- [x] Old Kudde's field screens at `/kudde/field` (herd, weigh and treat sessions, move camp, calving, the
+  offline outbox), its own installable app until the core field shell exists
+- [x] A worker scans their card once when work starts; the phone is theirs until the farm's midnight. Any
+  active worker may; "Not you?" hands the phone over. Offline, the phone recognises the card from its cached
+  list of active workers and fetches the day's token when there is signal
+- [x] Every animal and event records the worker who captured it (`worker_id`), queued records the worker
+  who was signed in when they were made
+- [ ] Field screens in Afrikaans (the sign-in screen is; the ported screens are English for now)
+- [ ] Photos in the field app (with the photo API)
+
 **Office tab**
-- [ ] Dashboard: head count by class, by camp, animals under withdrawal
+- [x] Dashboard: head count by class, by camp, animals under withdrawal (Kudde's screen, with charts and reports)
 - [ ] Herd list, animal page with timeline and photos, corrections
 - [x] Export: animals and events (CSV, `/kudde/api/export/*.csv`; the office button comes with the tab)
 
+**Livestock types** (owner's call, 25 October 2026: farms keep more than cattle)
+- [ ] Every animal has a species. **The species and all their rules are farm settings** (Kudde's part of Farm
+  settings), seeded with cattle, sheep, goats and pigs; a farm switches on the ones it keeps and can add another
+  (horses, game) with its own rules. A farm with one species never sees a species picker
+- [ ] Per species, editable in Settings: its name in `af`/`en`; the class names for young female, female,
+  female that has given birth, young male, male, castrated male (e.g. cattle: heifer calf, heifer, cow, bull
+  calf, bull, steer; sheep: ewe lamb, ewe, ewe, ram lamb, ram, wether; goats: doe kid, doe, doe, buck kid, buck,
+  kapater; pigs: piglet, gilt, sow, piglet, boar, barrow); young until (cattle 365 days, sheep and goats 180,
+  pigs 70); gestation (283, 147, 150, 114 days); weigh every (cattle 182 days; others set by the farm); the word
+  for a birth (calving, lambing, kidding, farrowing)
+- [ ] `Support\AnimalClass` and `HerdState` read the species' rules instead of cattle's constants; the class
+  logic itself (sex, young, has given birth, castrated) stays one rule for all
+- [ ] **Tags unique per species** (owner's call): sheep 001 and cow 001 may both exist, so every tag lookup, the
+  API and the field app carry the species. Existing animals become cattle
+- [ ] Births take one or more young (twins in sheep and goats); calving becomes "birth", named per species
+- [ ] **Pigs: a litter on the sow, piglets tagged at weaning** (owner's call): the farrowing records born
+  alive, stillborn and fostered; weaning records how many were weaned and creates the tagged animals, each
+  with the sow as dam and the litter's date as birth date. Same option for any species set to "young tagged at
+  weaning" in Settings
+- [ ] Field app: a species switch at the top (only the farm's species); camps stay shared across species
+- [ ] Office: counts per species, then class; export carries the species
+- [ ] Not in v1: flock-level records without individual tags (bulk move and treat cover most of it; the
+  planned herds become flocks)
+
+**Lineage** (owner's call, 25 October 2026; built with breeding, phase 7)
+- [ ] Parents stay recorded by tag (text) for animals never on this farm, and gain a link (`sire_id`,
+  `dam_id`) to the parent's record when it is here, set when the record is saved, because tags are reused over
+  the years and a tag alone can name the wrong animal. The office can correct a link
+- [ ] Reference animals: a parent kept only for the pedigree (an AI sire, a bought cow's dam), status
+  `reference`, never counted in the herd, so pedigrees can go further back than the farm
+- [ ] Checks, warnings not blocks: sire male, dam female, same species, born before the offspring
+- [ ] Animal page (office and field): three generations of pedigree, all offspring, a dam's births with the
+  interval between them, a sire's offspring with their weaning weights
+- [ ] With breeding: at a birth the sire is suggested from the male that was with her about one gestation
+  earlier, or from her AI record; choosing a male for a female warns if they share a grandparent or
+  great-grandparent
+- [ ] Import: old Kudde's sire and dam tags become links
+- [ ] Not in v1 (§1.3): herdbook numbers, breeding values, DNA
+
 **Herds and breeding** (promised on the website, not in old Kudde; in v1 by the owner's call)
 - [ ] Herds: named groups of animals, beside camps (an animal is in one herd and one camp at a time)
-- [ ] Breeding: a bull put in with a herd or cows (dates in and out), or an AI event; pregnancy check
-  (pregnant/empty, by whom); expected calving date derived from the service date and a gestation length set in
-  Settings (default 283 days); a calving closes it
-- [ ] Office: cows due to calve in the next 30 days, cows empty after a check, calving interval per cow
+- [ ] Breeding: a male put in with a herd or females (dates in and out), or an AI event; pregnancy check
+  (pregnant/empty, by whom); expected birth date derived from the service date and the species' gestation in
+  Settings; a birth closes it
+- [ ] Office: females due in the next 30 days, females empty after a check, birth interval per female
 
 **Import**
 - [ ] The farm-PC Kudde's SQLite and photos into a farm's install
@@ -422,8 +485,10 @@ prefixed with the module code.
 | `camps` | name, sort order, archived | Shared across modules; records keep the typed name as text, as old Kudde |
 | `weather_days` | date, max, min, rain, ET0, wind max | The farm's position, filled nightly; what modules stamp from |
 | `audit_log` | who, what, before/after, when | Office corrections and staff access |
-| `kudde_animals` | As old Kudde | `tag` unique |
+| `kudde_animals` | As old Kudde, plus species, `sire_id`/`dam_id` beside the parent tags, `worker_id` | `tag` unique per species; status adds `reference` |
 | `kudde_events` | As old Kudde, one table for all kinds | `client_uuid` unique (nullable for office entries), `user_id`, `device_id` |
+| `kudde_species` | code, names (af/en), enabled, sort order, class names, young until, gestation, weigh every, birth word, young tagged at weaning | Kudde's settings; seeded cattle, sheep, goats, pigs |
+| `kudde_litters` | dam, birth event, born alive, stillborn, fostered, weaned count and date | For species whose young are tagged at weaning (pigs) |
 | `kudde_photos` | file under `storage/app/photos/kudde/<animal_id>/` | `client_uuid` unique |
 | `kudde_herds` | name, sort order, archived | Same rules as camps |
 | `kudde_breeding` | animal, kind (bull in / AI / pregnancy check), dates, bull tag, result, by whom | Expected calving derived, never stored |
@@ -472,6 +537,12 @@ on that phone needs signal the first time.
   flagged for the office.
 - The devices page shows each phone's label, last user and last sync.
 - A phone holds one farm. Signing it into another farm is allowed only after its outbox is empty.
+
+**Kudde's field app is opened by a worker's card scan alone** (owner's call, 25 October 2026), ahead of the
+field users and PINs above. **Accepted risk:** the card's QR holds only the worker number, so anyone who can
+print a QR of a valid number can capture on Kudde until midnight. Limits: every record names the worker, an
+inactive worker's card is refused and their session ends at their next request, card scans are limited to 20 a
+minute per address, and the field API has no corrections, camp management or exports.
 
 **Accepted risk:** a lost phone that has not synced keeps working offline until it does (at most 21 days), and a
 4-digit PIN is weak on its own. The lockout, per-farm subdomain and server-side disable make that adequate for
@@ -566,9 +637,10 @@ Same checks as BowlsBuddy, in CI on every push:
 | 2 | Weather: proxy and cache, `weather_days`, Weather Compare's screens at `/weer` and in the office, rain record, frost, PDF, offline | Bekfontein's forecast, rain record and a year-against-year chart, offline after first load | 1½ weeks |
 | 3 | Bekfontein live on Weather (free), `update-all.sh`, privacy text | Bekfontein uses it for a fortnight | ½ week + trial |
 | 4 | Kudde domain: animals, events, calvings, derived herd state; Pest port of the old tests | Old Kudde's cases pass | 1½–2 weeks |
+| 4b | Livestock types: species in Settings with their rules, tags per species, births with several young, pig litters tagged at weaning, species in the field app and export | A farm with cattle and sheep captures both, each counted in its own classes | 1½ weeks |
 | 5 | Kudde office tab: dashboard, herd, animal page, corrections, export; licence commands | The office's whole day passes as a browser test | 1–1½ weeks |
 | 6 | Field: field-user sign-in, PIN switch offline, devices page, PWA shell and home tiles (Weather moves in), outbox, disable, 21-day window, Kudde screens | Offline capture → sync → office sees it, in Playwright | 2 weeks |
-| 7 | Photos, products, bulk events, herds and breeding, backups, importer | A farm-PC Kudde imports cleanly | 1½ weeks |
+| 7 | Photos, herds and breeding, lineage (pedigree, offspring, sire suggestion, inbreeding warning), backups, importer | A farm-PC Kudde imports cleanly | 1½ weeks |
 | 8 | Bekfontein live on Kudde, order-form text | One real farm live on Kudde for a month | ½ week + trial |
 | 9 | Werkers register: SA ID check, rates, encryption and the Payroll permission, photos, card print, field scan, register CSV, worker privacy notice | Bekfontein's workers registered (imported from Boord's register by number), cards printed and scanned | 2 weeks |
 | 10 | Werkers payroll: settings, rate table, pay runs, UIF and PAYE, loans, payslips, bank and cash lists, SARS and UIF totals | One Bekfontein pay run done in Plaashek beside the manual book, matching to the cent, then a second without the book | 2½ weeks + one pay cycle |
