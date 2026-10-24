@@ -549,7 +549,7 @@ Same checks as BowlsBuddy, in CI on every push:
 
 | Phase | What | Done when | Estimate |
 |---|---|---|---|
-| 0 | Skeleton from BowlsBuddy (Laravel 12, Filament 4, CI, session hook, build script, deploy doc); Afrihost package (bought: server `arno.aserv.co.za`), farm subdomains' DNS pointed at it, landing page | Demo farm live at `demo.plaashek.co.za` over HTTPS | ½ week |
+| 0 | Skeleton from BowlsBuddy (Laravel 12, Filament 4, CI, session hook, build script, deploy doc); Afrihost package (Bronze Pro on `kregg.aserv.co.za`), farm subdomains' DNS pointed at it, landing page | Demo farm live at `demo.plaashek.co.za` over HTTPS (done 24 October 2026) | ½ week |
 | 1 | Minimal core: modules table and loading, `farm:create`, setup page, office login and roles, Farm settings, `af`/`en`, audit log | A farm can be created, its owner signs in and sets the farm's position | 1 week |
 | 2 | Weather: proxy and cache, `weather_days`, Weather Compare's screens at `/weer` and in the office, rain record, frost, PDF, offline | Bekfontein's forecast, rain record and a year-against-year chart, offline after first load | 1½ weeks |
 | 3 | Bekfontein live on Weather (free), `update-all.sh`, privacy text | Bekfontein uses it for a fortnight | ½ week + trial |
