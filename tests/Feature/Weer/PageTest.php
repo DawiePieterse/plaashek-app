@@ -48,9 +48,9 @@ it('serves an install manifest for the farm', function () {
         ->assertJsonPath('name', 'Bekfontein · Weather');
 });
 
-it('has a Weather entry in the office menu that opens the page', function () {
+it('has a Weather screen in the office, with the way into the forecast app', function () {
     $this->actingAs(farm());
 
-    expect(WeatherPage::getNavigationUrl())->toEndWith('/weer');
-    $this->get('/admin/weer')->assertRedirect(route('weer.page'));
+    expect(WeatherPage::getNavigationUrl())->toEndWith('/admin/weer');
+    $this->get('/admin/weer')->assertOk()->assertSee(route('weer.page'));
 });

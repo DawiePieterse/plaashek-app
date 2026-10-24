@@ -1,0 +1,1466 @@
+// Kudde Field app, copied from the farm-PC Kudde (DawiePieterse/Kudde,
+// frontend/field/app.js) into Plaashek. What changed: a worker's card scan
+// opens it for the day (signin.js) and every record names that worker; photos
+// wait for Plaashek's photo API. One page, a handful of modals, no framework -
+// matching Boord's field/admin apps. Everything works offline: the animal list is
+// cached in IndexedDB, and every create/record action either reaches the
+// server immediately or is queued in IDB's outbox and replayed once a
+// connection comes back (see idb.js and trySync() below).
+
+const EVENT_FIELD_CONFIG = {
+  weight: { title: "Record weight", showValue: true, valueLabel: "Weight (kg)", showLocation: false },
+  treatment: { title: "Record treatment", showValue: false, showLocation: false, showTreatment: true },
+  movement: { title: "Record movement", showValue: false, showLocation: true },
+  // Birth carries a location (which camp it was born in) and leans on the
+  // note for what actually matters afterwards - calving ease, whether it
+  // had to be pulled, whether cow and calf are up and sucking.
+  birth: { title: "Record birth", showValue: false, showLocation: true },
+  sale: { title: "Record sale", showValue: false, showLocation: false },
+  death: { title: "Record death", showValue: false, showLocation: false },
+};
+
+const STATUS_LABEL = { alive: "Alive", dead: "Dead", sold: "Sold" };
+
+let animals = [];       // last known full herd, from the server or the IDB cache
+let activeTag = null;   // tag shown in the detail modal, for the event modal to act on
+let activeEventKind = null;
+
+// Which animals the list shows: "alive" (the default), "all" (dead and sold
+// too), or "weigh" (alive and overdue a weighing - the worklist). Remembered
+// per device, so the one person who wants the full book on their phone sets
+// it once. A search term overrides it: a farmer typing a tag wants that
+// animal found whether or not it has left the herd.
+const LIST_FILTER_KEY = "kudde_field_list";
+let listFilter = "alive";
+try {
+  const saved = localStorage.getItem(LIST_FILTER_KEY);
+  if (["alive", "all", "weigh"].includes(saved)) listFilter = saved;
+} catch (_) { /* private mode: default */ }
+
+// Past this many days without a weighing an alive animal needs one: Kudde's
+// "weigh every" setting, sent with the page (FieldController). Worked
+// out here, from the cached herd, so the count and the worklist are right
+// offline and the moment a weighing is saved - not after the next sync.
+const STALE_WEIGHT_DAYS = (window.PLAASHEK && window.PLAASHEK.weighEveryDays) || 182;
+
+function needsWeighing(a) {
+  if (a.status !== "alive") return false;
+  const days = Kudde.daysSince(a.last_weight_date);
+  return days === null || days > STALE_WEIGHT_DAYS;
+}
+
+// ---------------------------------------------------------------------
+// Modals and the back button
+// ---------------------------------------------------------------------
+//
+// Every sheet opens and closes through these two, and each open pushes a
+// history entry. On an Android phone the back button then closes the
+// sheet instead of leaving the app - which is what it did before, with
+// a half-typed weighing on screen. Closing a sheet from its own button
+// pops that entry again, so the history never fills with stale ones.
+// On iOS there is no back button, and a swipe back behaves the same.
+
+const openModals = [];     // ids, innermost last
+let suppressPop = false;   // set while we pop our own entry
+
+function showModal(id) {
+  const el = document.getElementById(id);
+  el.classList.remove("hidden");
+  el.classList.add("flex");
+  if (!openModals.includes(id)) {
+    openModals.push(id);
+    try { history.pushState({ modal: id }, ""); } catch (_) { /* a file:// preview */ }
+  }
+}
+
+function hideModal(id) {
+  const el = document.getElementById(id);
+  el.classList.add("hidden");
+  el.classList.remove("flex");
+  const at = openModals.indexOf(id);
+  if (at < 0) return;
+  openModals.splice(at, 1);
+  if (history.state && history.state.modal === id) {
+    suppressPop = true;
+    history.back();
+  }
+}
+
+// The close function for each modal, so the back button closes a sheet
+// the same way its own button does - clearing state, not just hiding.
+const MODAL_CLOSERS = {
+  addAnimalModal: closeAddAnimal,
+  animalDetailModal: closeAnimalDetail,
+  eventModal: closeEventModal,
+  calvingModal: closeCalving,
+  moveModal: closeMoveModal,
+  sessionModal: closeSession,
+  photoViewer: closePhotoViewer,
+  scanModal: closeScanner,
+};
+
+window.addEventListener("popstate", () => {
+  if (suppressPop) { suppressPop = false; return; }
+  const id = openModals.pop();
+  if (!id) return;
+  // Popped before the closer runs, so hideModal finds nothing to go back
+  // for: the history entry is already gone.
+  (MODAL_CLOSERS[id] || (() => hideModal(id)))();
+});
+
+// ---------------------------------------------------------------------
+// Date chips: Today / Yesterday above every date box
+// ---------------------------------------------------------------------
+//
+// Nearly every record is today's, the rest are yesterday's written up
+// the next morning. Two chips cover both without the native picker,
+// which on a phone is a scroll-wheel in the sun. The box stays, for the
+// rare older date.
+
+function initDateChips() {
+  document.querySelectorAll("[data-date-chips]").forEach((row) => {
+    const input = document.getElementById(row.dataset.dateChips);
+    const make = (label, daysAgo) => {
+      const el = document.createElement("button");
+      el.type = "button";
+      el.className = "chip";
+      el.dataset.daysAgo = daysAgo;
+      el.textContent = label;
+      el.addEventListener("click", () => {
+        const d = new Date();
+        d.setDate(d.getDate() - daysAgo);
+        setDate(input.id, Kudde.localDateStr(d));
+      });
+      row.appendChild(el);
+    };
+    make("Today", 0);
+    make("Yesterday", 1);
+    input.addEventListener("input", () => syncDateChips(input.id));
+  });
+}
+
+function syncDateChips(inputId) {
+  const row = document.querySelector(`[data-date-chips="${inputId}"]`);
+  if (!row) return;
+  const value = document.getElementById(inputId).value;
+  row.querySelectorAll(".chip").forEach((chip) => {
+    const d = new Date();
+    d.setDate(d.getDate() - parseInt(chip.dataset.daysAgo, 10));
+    chip.classList.toggle("active", value === Kudde.localDateStr(d));
+  });
+}
+
+// Sets a date box and lights the matching chip. Every place that defaults
+// a date to today goes through here.
+function setDate(inputId, value) {
+  document.getElementById(inputId).value = value;
+  syncDateChips(inputId);
+}
+
+// ---------------------------------------------------------------------
+// Today: what this phone recorded today
+// ---------------------------------------------------------------------
+//
+// The check before leaving the kraal: did the weighing of B12 go in, did
+// I record the move. Kept in localStorage rather than asked of the server,
+// so it is there with no signal and includes what is still in the outbox;
+// a new day starts it empty.
+
+const TODAY_KEY = "kudde_today";
+
+function todayLog() {
+  const today = Kudde.localDateStr();
+  try {
+    const parsed = JSON.parse(localStorage.getItem(TODAY_KEY) || "null");
+    if (parsed && parsed.date === today && Array.isArray(parsed.entries)) return parsed;
+  } catch (_) { /* unreadable: start afresh */ }
+  return { date: today, entries: [] };
+}
+
+function logToday(text, tag) {
+  const log = todayLog();
+  log.entries.unshift({ time: Kudde.fmtTime(new Date()), text, tag: tag || null });
+  try { localStorage.setItem(TODAY_KEY, JSON.stringify(log)); } catch (_) { /* full or private: shown this session only */ }
+  renderToday(log);
+}
+
+function renderToday(log = todayLog()) {
+  const n = log.entries.length;
+  document.getElementById("todayCard").classList.toggle("hidden", n === 0);
+  document.getElementById("todayCount").textContent = n;
+  document.getElementById("todayList").innerHTML = log.entries.map((e) => `
+    <div class="flex items-center gap-2 py-1 border-b border-slate-100 last:border-0 ${e.tag ? "cursor-pointer" : ""}" ${e.tag ? `data-tag="${escapeHtml(e.tag)}"` : ""}>
+      <span class="text-xs text-slate-400 w-11 shrink-0">${escapeHtml(e.time)}</span>
+      ${e.tag ? `<span class="font-semibold">${escapeHtml(e.tag)}</span>` : ""}
+      <span class="flex-1 min-w-0 truncate">${escapeHtml(e.text)}</span>
+    </div>`).join("");
+  document.getElementById("todayList").querySelectorAll("[data-tag]").forEach((row) => {
+    row.addEventListener("click", () => { if (animals.some((a) => a.tag === row.dataset.tag)) openAnimalDetail(row.dataset.tag); });
+  });
+}
+
+// One line for the Today list from an event payload.
+function describeEvent(payload) {
+  const kind = Kudde.eventLabel(payload.kind);
+  if (payload.kind === "weight") return `${kind} ${Kudde.fmtKg(payload.value)}`;
+  if (payload.kind === "treatment") return payload.product ? `${kind}: ${payload.product}${payload.dose ? ` ${payload.dose}` : ""}` : kind;
+  if (payload.kind === "movement") return payload.location ? `Moved to ${payload.location}` : kind;
+  return kind;
+}
+
+function uuid() {
+  return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+// ---------------------------------------------------------------------
+// Rendering
+// ---------------------------------------------------------------------
+
+// Which camp sections are folded shut, by lowercased camp name ("" for
+// the no-camp group), remembered per device. Until the farmer has touched
+// one, a herd past FOLD_ABOVE head starts folded and a small one starts
+// open: thirty rows read as a list, three hundred read as a wall.
+const GROUPS_KEY = "kudde_field_groups";
+const FOLD_ABOVE = 40;
+let collapsedGroups = null;   // Set, or null until first needed
+
+function loadCollapsed(groupKeys, total) {
+  if (collapsedGroups) return;
+  try {
+    const parsed = JSON.parse(localStorage.getItem(GROUPS_KEY) || "null");
+    if (parsed && Array.isArray(parsed.collapsed)) { collapsedGroups = new Set(parsed.collapsed); return; }
+  } catch (_) { /* unreadable: use the default */ }
+  collapsedGroups = new Set(total > FOLD_ABOVE ? groupKeys : []);
+}
+
+function toggleGroup(key) {
+  if (collapsedGroups.has(key)) collapsedGroups.delete(key); else collapsedGroups.add(key);
+  try { localStorage.setItem(GROUPS_KEY, JSON.stringify({ collapsed: [...collapsedGroups] })); } catch (_) { /* applied, not remembered */ }
+  renderAnimalList();
+}
+
+function renderAnimalList() {
+  const needle = document.getElementById("searchInput").value.trim().toLowerCase();
+  const filtered = needle
+    ? animals.filter((a) => a.tag.toLowerCase().includes(needle) || (a.name || "").toLowerCase().includes(needle))
+    : listFilter === "all" ? animals
+    : listFilter === "weigh" ? animals.filter(needsWeighing)
+    : animals.filter((a) => a.status === "alive");
+
+  document.getElementById("filterAliveBtn").classList.toggle("active", listFilter === "alive");
+  document.getElementById("filterAllBtn").classList.toggle("active", listFilter === "all");
+  document.getElementById("needsWeighingBtn").classList.toggle("active", listFilter === "weigh");
+
+  const list = document.getElementById("animalList");
+  list.innerHTML = "";
+  const empty = document.getElementById("emptyState");
+  empty.classList.toggle("hidden", filtered.length > 0);
+  // Three different nothings, each with its own way out.
+  empty.textContent = !animals.length ? "No animals yet"
+    : needle ? "No animal matches"
+    : listFilter === "weigh" ? "Nothing needs weighing"
+    : "No live animals - tap All to see dead and sold";
+
+  // Sorted on a copy: with no search term `filtered` IS `animals`, and
+  // Array.sort works in place - so rendering the list was quietly reordering
+  // the module's own copy of the herd.
+  const sorted = [...filtered].sort((x, y) => Kudde.compareTags(x.tag, y.tag));
+
+  // A search crosses camps, so its results are one flat block. Otherwise
+  // the herd is shown camp by camp, in Settings order, then camps only the
+  // history knows, then the animals with no camp.
+  if (needle) {
+    if (sorted.length) list.appendChild(renderGroup(null, sorted, { flat: true }));
+    return;
+  }
+
+  const byKey = new Map();
+  for (const a of sorted) {
+    const key = KuddeCamps.key(a.camp);
+    if (!byKey.has(key)) byKey.set(key, { label: a.camp ? a.camp.trim() : null, animals: [] });
+    byKey.get(key).animals.push(a);
+  }
+  const managed = KuddeCamps.names().map(KuddeCamps.key).filter((key) => byKey.has(key));
+  const stray = [...byKey.keys()].filter((key) => key && !managed.includes(key)).sort();
+  const order = managed.concat(stray, byKey.has("") ? [""] : []);
+
+  loadCollapsed(order, sorted.length);
+  for (const key of order) {
+    const group = byKey.get(key);
+    list.appendChild(renderGroup(group.label, group.animals, { key, collapsed: collapsedGroups.has(key) }));
+  }
+}
+
+// One white block: a header naming the camp with its count (none for a
+// flat search result), and a row per animal.
+function renderGroup(label, members, { flat = false, key = "", collapsed = false } = {}) {
+  const block = document.createElement("div");
+  block.className = "herd-group" + (collapsed ? " collapsed" : "");
+  if (!flat) {
+    const head = document.createElement("button");
+    head.type = "button";
+    head.className = "group-head";
+    head.setAttribute("aria-expanded", String(!collapsed));
+    head.innerHTML = `
+      <span class="${label === null ? "italic text-slate-500" : ""}">${label === null ? "No camp" : escapeHtml(label)}</span>
+      <span class="group-count">${members.length}</span>
+      <i class="fa-solid fa-chevron-down group-chevron"></i>`;
+    head.addEventListener("click", () => toggleGroup(key));
+    block.appendChild(head);
+  }
+  const rows = document.createElement("div");
+  rows.className = "group-rows";
+  for (const a of members) rows.appendChild(renderRow(a, { showCamp: flat }));
+  block.appendChild(rows);
+  return block;
+}
+
+function renderRow(a, { showCamp = false } = {}) {
+  const row = document.createElement("div");
+  row.className = "herd-row";
+  const days = Kudde.daysSince(a.last_weight_date);
+  const weighed = a.last_weight == null ? "Not weighed" : days === null ? "weighed" : `weighed ${days}d ago`;
+  const sub = [
+    Kudde.classLabel(a.class || Kudde.localClass(a)),
+    showCamp ? (a.camp || "No camp") : null,
+    weighed,
+  ].filter(Boolean).map(escapeHtml).join(" \u00b7 ")
+    + (needsWeighing(a) ? ` <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>` : "");
+  // The status pill only when it says something: on the Alive view every
+  // row would read "Alive". Withdrawal is always worth the pill.
+  const pills = [];
+  if (a.status !== "alive") pills.push(`<span class="text-xs font-semibold px-2 py-0.5 rounded-full status-pill-${a.status}">${STATUS_LABEL[a.status] || a.status}</span>`);
+  // Days left rather than the date: shorter on a row that has little
+  // width to spare, and the question at the crush is "how long still",
+  // not "which date". The detail card has the date.
+  if (Kudde.inWithdrawal(a.withdrawal_until)) {
+    const left = -Kudde.daysSince(a.withdrawal_until);
+    pills.push(`<span class="withdrawal-pill text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap">Withdrawal ${left <= 0 ? "ends today" : `${left}d`}</span>`);
+  }
+  row.innerHTML = `
+    <div class="row-main">
+      <div class="row-tag">${escapeHtml(a.tag)}${a.name ? ` <span class="font-normal text-slate-500">- ${escapeHtml(a.name)}</span>` : ""}
+        ${pendingTags.has(a.tag) ? `<i class="fa-solid fa-cloud-arrow-up unsynced-dot" title="Not yet synced"></i>` : ""}</div>
+      <div class="row-sub">${sub}</div>
+    </div>
+    <div class="row-right">
+      ${a.last_weight != null ? `<span class="row-kg">${Kudde.fmtKg(a.last_weight)}</span>` : ""}
+      ${pills.join("")}
+    </div>`;
+  row.addEventListener("click", () => openAnimalDetail(a.tag));
+  return row;
+}
+
+function renderSummary() {
+  document.getElementById("countAlive").textContent = animals.filter((a) => a.status === "alive").length;
+  document.getElementById("countNeedsWeighing").textContent = animals.filter(needsWeighing).length;
+}
+
+
+function escapeHtml(s) {
+  return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function eventIcon(kind) {
+  return { birth: "fa-baby", weight: "fa-weight-scale", treatment: "fa-syringe",
+           movement: "fa-arrows-turn-right", death: "fa-skull", sale: "fa-hand-holding-dollar" }[kind] || "fa-circle";
+}
+
+// ---------------------------------------------------------------------
+// Loading data
+// ---------------------------------------------------------------------
+
+async function loadAnimals() {
+  // The camp and product lists ride along with the herd, all three asked
+  // for at once: each has an 8 s deadline, and one after the other a
+  // phone out of signal waited 24 s for its cached herd.
+  const [, , herd] = await Promise.all([
+    KuddeCamps.load(), KuddeProducts.load(),
+    Kudde.api("/api/animals").then((list) => ({ list })).catch((e) => ({ error: e })),
+  ]);
+  if (herd.error) {
+    // 401: signed out (a new day): the scan screen is up; show the cached
+    // herd behind it rather than failing.
+    const signedOut = /^401\b/.test(String(herd.error.message || ""));
+    if (!signedOut && !Kudde.isNetworkError(herd.error)) throw herd.error;
+    if (!signedOut) Kudde.setOffline(true);
+    animals = await IDB.getCachedAnimals();
+  } else {
+    animals = herd.list;
+    Kudde.setOffline(false);
+    await IDB.cacheAnimals(animals);
+  }
+  renderAnimalList();
+  renderSummary();
+}
+
+// ---------------------------------------------------------------------
+// Add animal
+// ---------------------------------------------------------------------
+
+function openAddAnimal() {
+  for (const id of ["newTag", "newName", "newBreed", "newBirthDate", "newSireTag", "newDamTag", "newCamp"]) {
+    document.getElementById(id).value = "";
+  }
+  setNewSex(null);
+  document.getElementById("newCastrated").checked = false;
+  KuddeCamps.render(document.getElementById("newCampChips"), document.getElementById("newCamp"));
+  showModal("addAnimalModal");
+}
+
+function closeAddAnimal() {
+  hideModal("addAnimalModal");
+}
+
+let newSex = null;
+
+// No default: a dropdown that opened on Female recorded a bull as a cow
+// whenever nobody looked. The steer tick only shows under Male.
+function setNewSex(sex) {
+  newSex = sex;
+  document.getElementById("newFemaleBtn").classList.toggle("active", sex === "female");
+  document.getElementById("newMaleBtn").classList.toggle("active", sex === "male");
+  document.getElementById("newCastratedRow").classList.toggle("hidden", sex !== "male");
+}
+
+async function confirmAddAnimal() {
+  const tag = document.getElementById("newTag").value.trim();
+  if (!tag) { Kudde.toast("Tag number is required"); return; }
+  if (!newSex) { Kudde.toast("Female or male?"); return; }
+  if (animals.some((a) => a.tag === tag)) { Kudde.toast(`Tag ${tag} is already in use`); return; }
+
+  const payload = {
+    tag,
+    name: document.getElementById("newName").value.trim(),
+    breed: document.getElementById("newBreed").value.trim(),
+    sex: newSex,
+    castrated: newSex === "male" && document.getElementById("newCastrated").checked,
+    birth_date: document.getElementById("newBirthDate").value || null,
+    sire_tag: document.getElementById("newSireTag").value.trim() || null,
+    dam_tag: document.getElementById("newDamTag").value.trim() || null,
+    camp: document.getElementById("newCamp").value.trim() || null,
+  };
+  const campNote = KuddeCamps.newCampNote(payload.camp);
+
+  let saved;
+  try {
+    saved = await Kudde.api("/api/animals", { method: "POST", body: payload });
+    Kudde.setOffline(false);
+  } catch (e) {
+    if (!Kudde.isNetworkError(e)) { Kudde.toast(Kudde.errorDetail(e)); return; }
+    Kudde.setOffline(true);
+    saved = { ...payload, status: "alive", _pending: true };
+    await IDB.enqueue({ uuid: uuid(), kind: "animal", payload });
+    refreshSyncStatusPill().catch(() => {});
+  }
+
+  if (saved._pending && payload.camp) saved.camp = payload.camp;
+  logToday(`Added${payload.camp ? ` in ${payload.camp}` : ""}${saved._pending ? " (on phone)" : ""}`, tag);
+  animals.push(saved);
+  await IDB.cacheAnimals(animals);
+  renderAnimalList();
+  renderSummary();
+  closeAddAnimal();
+  if (campNote && !saved._pending) await KuddeCamps.load();
+  Kudde.toast(saved._pending ? "Saved on this device - will sync when online" : `Animal added${campNote}`);
+}
+
+// ---------------------------------------------------------------------
+// Animal detail + events
+// ---------------------------------------------------------------------
+
+async function openAnimalDetail(tag) {
+  const animal = animals.find((a) => a.tag === tag);
+  if (!animal) return;
+  activeTag = tag;
+
+  document.getElementById("detailTag").textContent = animal.tag;
+  document.getElementById("detailSub").textContent =
+    [animal.name, animal.breed, Kudde.classLabel(animal.class || Kudde.localClass(animal)),
+     Kudde.inWithdrawal(animal.withdrawal_until) ? `Withdrawal to ${Kudde.fmtDate(animal.withdrawal_until)}` : null]
+      .filter(Boolean).join(" · ");
+  document.getElementById("calvedBtn").classList.toggle("hidden", animal.sex !== "female");
+  const pill = document.getElementById("detailStatusPill");
+  pill.textContent = STATUS_LABEL[animal.status] || animal.status;
+  pill.className = `text-xs font-semibold px-2 py-1 rounded-full status-pill-${animal.status}`;
+
+  const eventsEl = document.getElementById("detailEvents");
+  eventsEl.innerHTML = `<div class="text-slate-400">Loading...</div>`;
+  showModal("animalDetailModal");
+
+  await renderAnimalPhotos();
+
+  try {
+    const events = await Kudde.api(`/api/animals/${encodeURIComponent(tag)}/events`);
+    Kudde.setOffline(false);
+    eventsEl.innerHTML = events.length
+      ? events.map((e) => `
+          <div class="flex items-center gap-2 py-1 border-b border-slate-100 last:border-0">
+            <i class="fa-solid ${eventIcon(e.kind)} event-icon-${e.kind} w-4"></i>
+            <div class="flex-1">
+              <span class="font-medium">${escapeHtml(Kudde.eventLabel(e.kind))}</span>
+              ${e.value != null ? ` - ${Kudde.fmtKg(e.value)}` : ""}${e.location ? ` - ${escapeHtml(e.location)}` : ""}${Kudde.treatmentSummary(e) ? ` - ${escapeHtml(Kudde.treatmentSummary(e))}` : ""}
+              ${e.note ? `<div class="text-xs text-slate-500">${escapeHtml(e.note)}</div>` : ""}
+            </div>
+            <div class="text-xs text-slate-400">${Kudde.fmtDate(e.event_date)}</div>
+          </div>`).join("")
+      : `<div class="text-slate-400">No events recorded yet</div>`;
+  } catch (e) {
+    if (!Kudde.isNetworkError(e)) throw e;
+    Kudde.setOffline(true);
+    eventsEl.innerHTML = `<div class="text-slate-400">Offline - history unavailable</div>`;
+  }
+}
+
+async function renderAnimalPhotos() {
+  // Photos wait for Plaashek's photo API (PLAN.md section 2.2, phase 7).
+  if (!window.PLAASHEK || !window.PLAASHEK.photos) return;
+  const el = document.getElementById("detailPhotos");
+  el.innerHTML = `<div class="text-slate-400 text-sm">Loading...</div>`;
+  try {
+    const photos = await Kudde.api(`/api/animals/${encodeURIComponent(activeTag)}/photos`);
+    Kudde.setOffline(false);
+    el.innerHTML = photos.length ? "" : `<div class="text-slate-400 text-sm">No photos yet</div>`;
+    for (const p of photos) {
+      const thumb = document.createElement("div");
+      thumb.className = "relative shrink-0";
+      thumb.innerHTML = `
+        <img src="${p.url}" class="w-20 h-20 object-cover rounded-lg border border-slate-200 cursor-pointer">
+        <button class="delete-photo-btn absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-black/60 text-white text-xs flex items-center justify-center" data-id="${p.id}">
+          <i class="fa-solid fa-xmark"></i>
+        </button>`;
+      thumb.querySelector("img").addEventListener("click", () => openPhotoViewer(p.url));
+      thumb.querySelector(".delete-photo-btn").addEventListener("click", () => deleteAnimalPhoto(p.id));
+      el.appendChild(thumb);
+    }
+  } catch (e) {
+    if (!Kudde.isNetworkError(e)) throw e;
+    Kudde.setOffline(true);
+    el.innerHTML = `<div class="text-slate-400 text-sm">Offline - photos unavailable</div>`;
+  }
+}
+
+// ---------------------------------------------------------------------
+// Scanning a tag
+// ---------------------------------------------------------------------
+
+let scanTarget = null;   // "search" or "session": where the read tag goes
+
+async function openScanner(target) {
+  scanTarget = target;
+  showModal("scanModal");
+  document.getElementById("scanHint").textContent = target === "card"
+    ? ((window.PLAASHEK && window.PLAASHEK.t && window.PLAASHEK.t.scan_camera_hint) || "Point the camera at the card's code")
+    : "Point the camera at the tag's code";
+  try {
+    await KuddeScan.start(document.getElementById("scanVideo"), onScanned);
+  } catch (e) {
+    hideModal("scanModal");
+    Kudde.toast(e && e.message ? e.message : "Could not start the camera");
+  }
+}
+
+function closeScanner() {
+  KuddeScan.stop();
+  hideModal("scanModal");
+  document.getElementById("scanVideo").srcObject = null;
+}
+
+// What a read code means: the tag, as printed. A code that is a web
+// address ending in the tag (some printers make those) is taken by its
+// last part, so either style of label works.
+function tagFromCode(text) {
+  const raw = String(text || "").trim();
+  if (/^https?:\/\//i.test(raw)) {
+    const tail = raw.split(/[/?#]/).filter(Boolean).pop();
+    return tail ? decodeURIComponent(tail) : raw;
+  }
+  return raw;
+}
+
+function onScanned(text) {
+  if (scanTarget === "card") {
+    closeScanner();
+    KuddeSignIn.fromCard(text).catch(() => {});
+    return;
+  }
+  const tag = tagFromCode(text);
+  closeScanner();
+  if (!tag) return;
+  const known = animals.find((a) => a.tag.toLowerCase() === tag.toLowerCase());
+  if (scanTarget === "session") {
+    document.getElementById("sessionTag").value = known ? known.tag : tag;
+    syncSessionEntry();
+    if (!known) { Kudde.toast(`No animal with tag ${tag}`); return; }
+    if (session && session.kind === "weight") document.getElementById("sessionValue").focus();
+    return;
+  }
+  document.getElementById("searchInput").value = known ? known.tag : tag;
+  renderAnimalList();
+  if (known) openAnimalDetail(known.tag);
+  else Kudde.toast(`No animal with tag ${tag} - add it?`);
+}
+
+function openPhotoViewer(url) {
+  document.getElementById("photoViewerImg").src = url;
+  showModal("photoViewer");
+}
+
+function closePhotoViewer() {
+  hideModal("photoViewer");
+  document.getElementById("photoViewerImg").src = "";
+}
+
+async function deleteAnimalPhoto(id) {
+  // The x on a thumbnail is small and sits right where a thumb lands when
+  // scrolling the photo strip, and a deleted photo has no undo.
+  if (!await Kudde.confirm({ title: `Delete this photo of ${activeTag}?`, message: "This can't be undone.",
+                             confirmLabel: "Delete", danger: true })) return;
+  try {
+    await Kudde.api(`/api/photos/${id}`, { method: "DELETE" });
+    Kudde.setOffline(false);
+  } catch (e) {
+    if (!Kudde.isNetworkError(e)) { Kudde.toast(Kudde.errorDetail(e)); return; }
+    Kudde.setOffline(true);
+    Kudde.toast("Offline - can't delete a photo right now");
+    return;
+  }
+  await renderAnimalPhotos();
+}
+
+async function uploadAnimalPhoto(tag, file) {
+  // Stamped at capture, not at send, and kept for the replay: the server
+  // stores a photo once per client_uuid. A several-MB photo over farm wifi
+  // routinely outlasts the 8s deadline, and the upload may well have landed
+  // anyway - this is the only thing that tells that retry apart from a
+  // genuine second picture of the same animal.
+  const clientUuid = uuid();
+  try {
+    await Kudde.apiUpload(`/api/animals/${encodeURIComponent(tag)}/photos`,
+                          photoFormData(file, clientUuid));
+    Kudde.setOffline(false);
+    Kudde.toast("Photo saved");
+    logToday("Photo", tag);
+  } catch (e) {
+    if (!Kudde.isNetworkError(e)) { Kudde.toast(Kudde.errorDetail(e)); return; }
+    Kudde.setOffline(true);
+    await IDB.enqueue({ uuid: clientUuid, kind: "photo",
+                        payload: { tag, blob: file, type: file.type, client_uuid: clientUuid } });
+    Kudde.toast("Saved on this device - will sync when online");
+    logToday("Photo (on phone)", tag);
+  }
+  if (activeTag === tag) await renderAnimalPhotos();
+}
+
+// The upload body, built the same way whether it is being sent now or
+// replayed out of the outbox - the client_uuid has to survive that round
+// trip, which is the whole point of it.
+function photoFormData(blob, clientUuid, type) {
+  const formData = new FormData();
+  formData.append("file", blob, `photo.${(type || blob.type || "image/jpeg").split("/")[1] || "jpg"}`);
+  formData.append("client_uuid", clientUuid);
+  return formData;
+}
+
+function closeAnimalDetail() {
+  hideModal("animalDetailModal");
+  activeTag = null;
+}
+
+function openEventModal(kind) {
+  activeEventKind = kind;
+  const cfg = EVENT_FIELD_CONFIG[kind];
+  document.getElementById("eventModalTitle").textContent = cfg.title;
+  setDate("eventDate", Kudde.localDateStr());
+  document.getElementById("eventValue").value = "";
+  document.getElementById("eventLocation").value = "";
+  document.getElementById("eventNote").value = "";
+  document.getElementById("eventValueRow").classList.toggle("hidden", !cfg.showValue);
+  if (cfg.showValue) {
+    document.getElementById("eventValueLabel").textContent = cfg.valueLabel;
+    Kudde.showWeightHint(document.getElementById("eventValueHint"), animals.find((a) => a.tag === activeTag), "");
+  }
+  document.getElementById("eventTreatmentRows").classList.toggle("hidden", !cfg.showTreatment);
+  if (cfg.showTreatment) {
+    for (const id of ["eventProduct", "eventDose", "eventWithdrawal"]) document.getElementById(id).value = "";
+    KuddeProducts.render(document.getElementById("eventProductChips"), TREATMENT_INPUTS.event);
+  }
+  document.getElementById("eventLocationRow").classList.toggle("hidden", !cfg.showLocation);
+  if (cfg.showLocation) {
+    KuddeCamps.render(document.getElementById("eventLocationChips"), document.getElementById("eventLocation"));
+  }
+  showModal("eventModal");
+}
+
+function closeEventModal() {
+  hideModal("eventModal");
+  activeEventKind = null;
+}
+
+const STATUS_ON_EVENT = { death: "dead", sale: "sold" };
+
+// The two treatment forms' product, dose and withdrawal boxes, as
+// KuddeProducts.render() fills and KuddeProducts.read() reads them.
+// Looked up lazily: the elements exist before init() runs, but a const at
+// load time reads cleaner as a function than as a getter.
+const TREATMENT_INPUTS = {
+  get event() {
+    return { product: document.getElementById("eventProduct"), dose: document.getElementById("eventDose"),
+             withdrawal: document.getElementById("eventWithdrawal") };
+  },
+  get session() {
+    return { product: document.getElementById("sessionProduct"), dose: document.getElementById("sessionDose"),
+             withdrawal: document.getElementById("sessionWithdrawal") };
+  },
+};
+
+// event_date plus the withdrawal, as YYYY-MM-DD - the same sum the server
+// makes, done here so the list flags the animal before the next sync.
+function withdrawalEnd(eventDate, days) {
+  const d = Kudde._parseDate(eventDate);
+  d.setDate(d.getDate() + days);
+  return Kudde.localDateStr(d);
+}
+
+// Records one event, now if the server answers and into the outbox if not,
+// and brings the cached animal into line with it. Shared by the event
+// modal and the sessions, so there is one place that knows the rules.
+// Returns {pending} or null if the server refused it (already toasted).
+async function saveEvent(fields) {
+  const payload = {
+    ...fields,
+    // Stamped at capture, not at send, and kept for the replay: the server
+    // records an event once per client_uuid. A request that times out (8s)
+    // may well have landed, and this is the only thing that can tell the
+    // retry apart from a genuine second event - the same animal really can
+    // be treated twice on one day.
+    client_uuid: uuid(),
+  };
+
+  let pending = false;
+  try {
+    await Kudde.api("/api/events", { method: "POST", body: payload });
+    Kudde.setOffline(false);
+  } catch (e) {
+    if (!Kudde.isNetworkError(e)) { Kudde.toast(Kudde.errorDetail(e)); return null; }
+    Kudde.setOffline(true);
+    pending = true;
+    await IDB.enqueue({ uuid: payload.client_uuid, kind: "event", payload });
+    refreshSyncStatusPill().catch(() => {});
+  }
+
+  // The cached animal follows the event straight away, by the same rules
+  // the server applies, so the list, the counts and the next hint read
+  // right immediately, online or not: a death or sale flips the status, a
+  // weighing becomes the last weight, a move or birth sets the camp.
+  const animal = animals.find((a) => a.tag === payload.tag);
+  if (animal) {
+    const newStatus = STATUS_ON_EVENT[payload.kind];
+    if (newStatus) animal.status = newStatus;
+    if (payload.kind === "weight" && payload.value > 0
+        && (!animal.last_weight_date || payload.event_date >= animal.last_weight_date)) {
+      animal.last_weight = payload.value;
+      animal.last_weight_date = payload.event_date;
+    }
+    if ((payload.kind === "movement" || payload.kind === "birth") && payload.location) {
+      animal.camp = payload.location;
+    }
+    if (payload.kind === "treatment" && payload.withdrawal_days != null) {
+      const until = withdrawalEnd(payload.event_date, payload.withdrawal_days);
+      if (!animal.withdrawal_until || until > animal.withdrawal_until) animal.withdrawal_until = until;
+    }
+    await IDB.cacheAnimals(animals);
+  }
+  if (payload.kind === "treatment") {
+    KuddeProducts.remember({ product: payload.product, dose: payload.dose, withdrawal_days: payload.withdrawal_days });
+  }
+  logToday(describeEvent(payload) + (pending ? " (on phone)" : ""), payload.tag);
+  return { pending };
+}
+
+async function confirmEvent() {
+  const eventDate = document.getElementById("eventDate").value;
+  if (!eventDate) { Kudde.toast("Date is required"); return; }
+
+  // Death and Sale take the animal out of the live herd (the server flips
+  // its status), and the two buttons sit beside Birth and Move in the same
+  // grid - easy to hit with a gloved thumb. Asked here, at Save, rather than
+  // on opening the modal, so it names exactly what is about to be recorded.
+  if (STATUS_ON_EVENT[activeEventKind]) {
+    const what = activeEventKind === "death"
+      ? `Record ${activeTag} as dead`
+      : `Record ${activeTag} as sold`;
+    const warning = activeEventKind === "sale" ? Kudde.saleWarning(animals.find((a) => a.tag === activeTag)) : "";
+    const ok = await Kudde.confirm({
+      title: `${what}?`,
+      message: `It will be marked ${STATUS_LABEL[STATUS_ON_EVENT[activeEventKind]]} and leave the live herd.`,
+      warning, danger: true,
+      confirmLabel: activeEventKind === "death" ? "Record death" : "Record sale",
+    });
+    if (!ok) return;
+  }
+
+  const value = EVENT_FIELD_CONFIG[activeEventKind].showValue
+    ? parseFloat(document.getElementById("eventValue").value) || null : null;
+  // A weight event with no weight in it silences the "needs weighing"
+  // reminder for another six months while recording nothing, so the server
+  // now refuses one. Caught here as well because this modal is the one place
+  // it can be typed, and the offline path never reaches the server to be
+  // told: an empty weight would sit in the outbox and be dropped on sync.
+  if (activeEventKind === "weight" && !(value > 0)) {
+    Kudde.toast("Enter the weight in kg");
+    return;
+  }
+
+  const payload = {
+    tag: activeTag,
+    kind: activeEventKind,
+    event_date: eventDate,
+    value,
+    location: document.getElementById("eventLocation").value.trim(),
+    note: document.getElementById("eventNote").value.trim(),
+  };
+  if (activeEventKind === "treatment") {
+    const treatment = KuddeProducts.read(TREATMENT_INPUTS.event);
+    if (!treatment) return;
+    Object.assign(payload, treatment);
+  }
+
+  const result = await saveEvent(payload);
+  if (!result) return;
+  const { pending } = result;
+
+  const campNote = KuddeCamps.newCampNote(payload.location);
+  closeEventModal();
+  renderAnimalList();
+  renderSummary();
+  if (campNote && !pending) await KuddeCamps.load();
+  Kudde.toast(pending ? "Saved on this device - will sync when online" : `Event recorded${campNote}`);
+  if (document.getElementById("animalDetailModal").classList.contains("flex")) {
+    openAnimalDetail(activeTag || document.getElementById("detailTag").textContent);
+  }
+}
+
+// ---------------------------------------------------------------------
+// Calving: the cow calved, and here is the calf
+// ---------------------------------------------------------------------
+//
+// One screen for what used to be two forms and a retyped dam tag: a birth
+// event on the cow (camp, and in the note how it went) and the new calf
+// with her as dam, her breed, the date as birth date and the same camp.
+// The server records both or neither (routers/calvings.py); offline it is
+// one outbox entry, replayed as one.
+
+let calfSex = null;
+
+function setCalfSex(sex) {
+  calfSex = sex;
+  document.getElementById("calfFemaleBtn").classList.toggle("active", sex === "female");
+  document.getElementById("calfMaleBtn").classList.toggle("active", sex === "male");
+}
+
+function openCalving() {
+  const dam = animals.find((a) => a.tag === activeTag);
+  if (!dam) return;
+  document.getElementById("calvingDam").textContent = dam.tag;
+  setDate("calvingDate", Kudde.localDateStr());
+  for (const id of ["calfTag", "calfName", "calfSireTag", "calvingNote"]) document.getElementById(id).value = "";
+  // The cow's breed and camp are the calf's until told otherwise.
+  document.getElementById("calfBreed").value = dam.breed || "";
+  document.getElementById("calvingCamp").value = dam.camp || "";
+  KuddeCamps.render(document.getElementById("calvingCampChips"), document.getElementById("calvingCamp"));
+  // No default sex: the two buttons start unlit, so the choice is made,
+  // not inherited from whichever came first in the markup.
+  setCalfSex(null);
+  showModal("calvingModal");
+  document.getElementById("calfTag").focus();
+}
+
+function closeCalving() {
+  hideModal("calvingModal");
+}
+
+async function confirmCalving() {
+  const dam = animals.find((a) => a.tag === activeTag);
+  if (!dam) return;
+  const eventDate = document.getElementById("calvingDate").value;
+  if (!eventDate) { Kudde.toast("Date is required"); return; }
+  const calfTag = document.getElementById("calfTag").value.trim();
+  if (!calfTag) { Kudde.toast("The calf needs a tag number"); return; }
+  if (animals.some((a) => a.tag.toLowerCase() === calfTag.toLowerCase())) { Kudde.toast(`Tag ${calfTag} is already in use`); return; }
+  if (!calfSex) { Kudde.toast("Heifer or bull calf?"); return; }
+
+  const camp = document.getElementById("calvingCamp").value.trim();
+  const payload = {
+    dam_tag: dam.tag,
+    event_date: eventDate,
+    calf: {
+      tag: calfTag, sex: calfSex,
+      name: document.getElementById("calfName").value.trim(),
+      breed: document.getElementById("calfBreed").value.trim(),
+      sire_tag: document.getElementById("calfSireTag").value.trim() || null,
+    },
+    camp,
+    note: document.getElementById("calvingNote").value.trim(),
+    client_uuid: uuid(),   // see saveEvent: what makes a replay record once
+  };
+
+  let calf;
+  let pending = false;
+  try {
+    calf = (await Kudde.api("/api/calvings", { method: "POST", body: payload })).calf;
+    Kudde.setOffline(false);
+  } catch (e) {
+    if (!Kudde.isNetworkError(e)) { Kudde.toast(Kudde.errorDetail(e)); return; }
+    Kudde.setOffline(true);
+    pending = true;
+    await IDB.enqueue({ uuid: payload.client_uuid, kind: "calving", payload });
+    refreshSyncStatusPill().catch(() => {});
+    calf = { ...payload.calf, dam_tag: dam.tag, birth_date: eventDate, status: "alive",
+             camp: camp || null, last_weight: null, last_weight_date: null, _pending: true };
+  }
+  if (calf) {
+    // The server answers with the Animal row, which carries no camp; the
+    // list needs it until the next full load.
+    animals.push({ ...calf, camp: camp || null });
+    await IDB.cacheAnimals(animals);
+  }
+  logToday(`Calved, calf ${calfTag}${pending ? " (on phone)" : ""}`, dam.tag);
+  const campNote = KuddeCamps.newCampNote(camp);
+  closeCalving();
+  renderAnimalList();
+  renderSummary();
+  if (campNote && !pending) await KuddeCamps.load();
+  Kudde.toast(pending ? `Saved on this device - calf ${calfTag} will sync when online`
+    : `Calf ${calfTag} added to ${dam.tag}${campNote}`);
+  openAnimalDetail(dam.tag);
+}
+
+// ---------------------------------------------------------------------
+// Move camp (bulk movement)
+// ---------------------------------------------------------------------
+
+let moveLocations = [];        // last /api/locations response
+let moveSelectedLocation = null;
+
+async function openMoveModal() {
+  let data;
+  try {
+    data = await Kudde.api("/api/locations");
+    Kudde.setOffline(false);
+  } catch (e) {
+    if (!Kudde.isNetworkError(e)) throw e;
+    Kudde.setOffline(true);
+    Kudde.toast("Offline - connect to move a camp");
+    return;
+  }
+
+  moveLocations = data;
+  renderMoveLocations();
+  document.getElementById("moveLocationsView").classList.remove("hidden");
+  document.getElementById("moveAnimalsView").classList.add("hidden");
+  showModal("moveModal");
+}
+
+function renderMoveLocations() {
+  KuddeCamps.renderLocations(document.getElementById("moveLocationsList"),
+                             document.getElementById("moveLocationsEmpty"), moveLocations, openMoveAnimals);
+}
+
+function openMoveAnimals(index) {
+  moveSelectedLocation = moveLocations[index];
+  if (!moveSelectedLocation) return;
+
+  document.getElementById("moveFromLocation").textContent = moveSelectedLocation.location === null
+    ? "no camp" : moveSelectedLocation.location;
+  setDate("moveDate", Kudde.localDateStr());
+  document.getElementById("moveToLocation").value = "";
+  document.getElementById("moveNote").value = "";
+  KuddeCamps.render(document.getElementById("moveToChips"), document.getElementById("moveToLocation"),
+                    { exclude: moveSelectedLocation.location });
+  renderMoveAnimals();
+  document.getElementById("moveLocationsView").classList.add("hidden");
+  document.getElementById("moveAnimalsView").classList.remove("hidden");
+}
+
+function renderMoveAnimals() {
+  document.getElementById("moveAnimalsList").innerHTML = moveSelectedLocation.animals.map((a) => `
+    <label class="flex items-center gap-2 py-1">
+      <input type="checkbox" class="move-animal-check w-4 h-4" data-tag="${escapeHtml(a.tag)}" checked>
+      <span>${escapeHtml(a.tag)}${a.name ? ` - ${escapeHtml(a.name)}` : ""}</span>
+    </label>`).join("");
+}
+
+function backToMoveLocations() {
+  document.getElementById("moveAnimalsView").classList.add("hidden");
+  document.getElementById("moveLocationsView").classList.remove("hidden");
+  moveSelectedLocation = null;
+}
+
+function closeMoveModal() {
+  hideModal("moveModal");
+  moveSelectedLocation = null;
+}
+
+async function confirmMove() {
+  const tags = Array.from(document.querySelectorAll(".move-animal-check:checked")).map((el) => el.dataset.tag);
+  if (!tags.length) { Kudde.toast("Select at least one animal"); return; }
+  const eventDate = document.getElementById("moveDate").value;
+  if (!eventDate) { Kudde.toast("Date is required"); return; }
+  const location = document.getElementById("moveToLocation").value.trim();
+  if (!location) { Kudde.toast("Pick the camp they are moving to"); return; }
+  const campNote = KuddeCamps.newCampNote(location);
+
+  const payload = {
+    tags, event_date: eventDate, location,
+    note: document.getElementById("moveNote").value.trim(),
+    // Same contract as a single event: stamped at capture, kept for the
+    // replay, and what stops a timed-out-but-landed camp move from moving
+    // the whole camp a second time when the outbox retries it.
+    client_uuid: uuid(),
+  };
+
+  let pending = false;
+  try {
+    await Kudde.api("/api/events/movement/bulk", { method: "POST", body: payload });
+    Kudde.setOffline(false);
+  } catch (e) {
+    if (!Kudde.isNetworkError(e)) { Kudde.toast(Kudde.errorDetail(e)); return; }
+    Kudde.setOffline(true);
+    pending = true;
+    await IDB.enqueue({ uuid: payload.client_uuid, kind: "bulk_movement", payload });
+    refreshSyncStatusPill().catch(() => {});
+  }
+
+  logToday(`Moved ${tags.length} animal${tags.length === 1 ? "" : "s"} to ${location}${pending ? " (on phone)" : ""}`, null);
+  // The cached herd follows the move at once; loadAnimals then replaces it
+  // with the server's copy when there is one.
+  for (const a of animals) if (tags.includes(a.tag)) a.camp = location;
+  await IDB.cacheAnimals(animals);
+  closeMoveModal();
+  await loadAnimals();   // reloads the camp list too, so a new camp has its chip next time
+  Kudde.toast(pending
+    ? `Saved on this device - will sync ${tags.length} moves when online`
+    : `Moved ${tags.length} animal${tags.length === 1 ? "" : "s"} to ${location}${campNote}`);
+}
+
+// ---------------------------------------------------------------------
+// Sessions: weigh or treat one animal after another
+// ---------------------------------------------------------------------
+//
+// A weighing day is forty head through a crush, and the one-animal flow
+// (search, tap, Weight, type, Save, Close) is six steps a head. A session
+// is two: tag, number, Save and next. Each save is an ordinary event
+// through saveEvent(), so it lands or queues exactly as a single one does
+// and nothing new is needed on the server or in the outbox.
+
+let session = null;   // {kind, date, note, log: [{tag, value, pending}]} while one is open
+
+function openSessionSetup(kind) {
+  session = { kind, date: Kudde.localDateStr(), note: "", treatment: null, log: [] };
+  document.getElementById("sessionSetupTitle").textContent = kind === "weight" ? "Weigh session" : "Treat session";
+  setDate("sessionDate", session.date);
+  for (const id of ["sessionNote", "sessionProduct", "sessionDose", "sessionWithdrawal"]) document.getElementById(id).value = "";
+  document.getElementById("sessionTreatmentRows").classList.toggle("hidden", kind !== "treatment");
+  if (kind === "treatment") {
+    KuddeProducts.render(document.getElementById("sessionProductChips"), TREATMENT_INPUTS.session);
+  }
+  document.getElementById("sessionSetupView").classList.remove("hidden");
+  document.getElementById("sessionCaptureView").classList.add("hidden");
+  showModal("sessionModal");
+}
+
+function startSession() {
+  const date = document.getElementById("sessionDate").value;
+  if (!date) { Kudde.toast("Date is required"); return; }
+  session.date = date;
+  session.note = document.getElementById("sessionNote").value.trim();
+  if (session.kind === "treatment") {
+    session.treatment = KuddeProducts.read(TREATMENT_INPUTS.session);
+    if (!session.treatment) return;
+    if (!session.treatment.product) { Kudde.toast("Say what the product is"); return; }
+  }
+
+  document.getElementById("sessionTitle").textContent = session.kind === "weight" ? "Weighing"
+    : `Treating: ${Kudde.treatmentSummary({ kind: "treatment", ...session.treatment })}`;
+  document.getElementById("sessionValueRow").classList.toggle("hidden", session.kind !== "weight");
+  document.getElementById("sessionSaveBtn").textContent = session.kind === "weight" ? "Save and next" : "Record and next";
+  // Every alive tag, so the tag box completes after a character or two.
+  document.getElementById("tagList").innerHTML = animals
+    .filter((a) => a.status === "alive")
+    .map((a) => `<option value="${escapeHtml(a.tag)}"></option>`).join("");
+  document.getElementById("sessionSetupView").classList.add("hidden");
+  document.getElementById("sessionCaptureView").classList.remove("hidden");
+  resetSessionEntry();
+  renderSessionLog();
+}
+
+function closeSession() {
+  hideModal("sessionModal");
+  const n = session ? session.log.length : 0;
+  session = null;
+  renderAnimalList();
+  renderSummary();
+  if (n) Kudde.toast(`Session done - ${n} recorded`);
+}
+
+function resetSessionEntry() {
+  document.getElementById("sessionTag").value = "";
+  document.getElementById("sessionValue").value = "";
+  document.getElementById("sessionAnimal").textContent = "";
+  document.getElementById("sessionValueHint").textContent = "";
+  document.getElementById("sessionTag").focus();
+}
+
+// The animal the tag box names, ignoring case, or null.
+function sessionAnimal() {
+  const typed = document.getElementById("sessionTag").value.trim().toLowerCase();
+  if (!typed) return null;
+  return animals.find((a) => a.tag.toLowerCase() === typed) || null;
+}
+
+function syncSessionEntry() {
+  const animal = sessionAnimal();
+  const who = document.getElementById("sessionAnimal");
+  if (!animal) {
+    who.textContent = document.getElementById("sessionTag").value.trim() ? "No animal with that tag" : "";
+  } else {
+    who.textContent = [animal.name, animal.camp, animal.status !== "alive" ? STATUS_LABEL[animal.status] : null,
+                       Kudde.inWithdrawal(animal.withdrawal_until) ? `in withdrawal to ${Kudde.fmtDate(animal.withdrawal_until)}` : null]
+      .filter(Boolean).join(" \u00b7 ");
+  }
+  if (session.kind === "weight") {
+    Kudde.showWeightHint(document.getElementById("sessionValueHint"), animal, document.getElementById("sessionValue").value);
+  }
+}
+
+async function saveSessionEntry() {
+  const animal = sessionAnimal();
+  if (!animal) { Kudde.toast("No animal with that tag"); document.getElementById("sessionTag").focus(); return; }
+  let value = null;
+  if (session.kind === "weight") {
+    value = parseFloat(document.getElementById("sessionValue").value) || null;
+    if (!(value > 0)) { Kudde.toast("Enter the weight in kg"); document.getElementById("sessionValue").focus(); return; }
+  }
+  // The same tag twice in one session is usually the previous animal still
+  // in the box, not a second weighing - asked, not refused.
+  const before = session.log.find((e) => e.tag === animal.tag);
+  if (before && !await Kudde.confirm({
+    title: `${animal.tag} is already in this session`,
+    message: before.value != null ? `Recorded at ${Kudde.fmtKg(before.value)}. Record it again?` : "Record it again?",
+    confirmLabel: "Record again" })) return;
+
+  const result = await saveEvent({
+    tag: animal.tag, kind: session.kind, event_date: session.date,
+    value, location: "", note: session.note, ...(session.treatment || {}),
+  });
+  if (!result) return;
+  session.log.unshift({ tag: animal.tag, value, pending: result.pending });
+  renderSessionLog();
+  resetSessionEntry();
+}
+
+function renderSessionLog() {
+  const n = session.log.length;
+  document.getElementById("sessionSub").textContent = `${n} recorded`;
+  document.getElementById("sessionLog").innerHTML = n ? session.log.map((e) => `
+    <div class="flex items-center justify-between py-1 border-b border-slate-100 last:border-0">
+      <span class="font-semibold">${escapeHtml(e.tag)}</span>
+      <span>${e.value != null ? Kudde.fmtKg(e.value) : ""}</span>
+      <span class="text-xs ${e.pending ? "text-amber-600" : "text-slate-400"}">${e.pending ? "saved on phone" : "saved"}</span>
+    </div>`).join("") : `<div class="text-slate-400">Nothing yet</div>`;
+}
+
+// ---------------------------------------------------------------------
+// Sync
+// ---------------------------------------------------------------------
+
+let failedCount = 0;   // last known number of outbox entries the server refused
+let pendingTags = new Set();   // tags with something of their own still in the outbox
+
+// Which animals an outbox entry is about, for the marker on their rows.
+function outboxTags(entry) {
+  const p = entry.payload || {};
+  if (entry.kind === "bulk_movement") return p.tags || [];
+  if (entry.kind === "calving") return [p.dam_tag, p.calf && p.calf.tag].filter(Boolean);
+  return p.tag ? [p.tag] : [];
+}
+
+function updateSyncStatusPill(pendingCount) {
+  const el = document.getElementById("syncStatus");
+  let text;
+  if (Kudde.isOffline()) {
+    text = pendingCount ? `Offline - ${pendingCount} pending` : "Offline";
+  } else {
+    text = pendingCount ? `Syncing ${pendingCount}...` : "Online";
+  }
+  if (failedCount) text += ` - ${failedCount} failed`;
+  el.textContent = text;
+  // Red while anything is stuck, so it is noticed at a glance from the
+  // home screen rather than only by someone who thinks to tap the pill.
+  el.classList.toggle("bg-red-600", failedCount > 0);
+  el.classList.toggle("bg-white/20", failedCount === 0);
+}
+
+// Re-reads both counts from IndexedDB and redraws the pill. The failed
+// count is kept in a module variable so updateSyncStatusPill can still be
+// called synchronously with only the pending count.
+async function refreshSyncStatusPill() {
+  const [pending, failed] = await Promise.all([IDB.getPending(), IDB.getFailed()]);
+  failedCount = failed.length;
+  updateSyncStatusPill(pending.length);
+  // The rows' unsynced markers follow the outbox: redrawn only when the
+  // set of tags changes, so the 20s tick does not repaint a list the
+  // user is scrolling.
+  const tags = new Set([...pending, ...failed].flatMap(outboxTags));
+  const same = tags.size === pendingTags.size && [...tags].every((t) => pendingTags.has(t));
+  if (!same) { pendingTags = tags; renderAnimalList(); }
+}
+
+// One line naming what a stuck outbox entry was, in the user's terms - the
+// tag and the kind of record, not a uuid.
+function describeOutboxEntry(entry) {
+  const p = entry.payload || {};
+  if (entry.kind === "animal") return `New animal ${p.tag}`;
+  if (entry.kind === "event") return `${Kudde.eventLabel(p.kind)} for ${p.tag} on ${Kudde.fmtDate(p.event_date)}`;
+  if (entry.kind === "bulk_movement") {
+    const n = (p.tags || []).length;
+    return `Move of ${n} animal${n === 1 ? "" : "s"} to ${p.location}`;
+  }
+  if (entry.kind === "photo") return `Photo of ${p.tag}`;
+  if (entry.kind === "calving") return `Calving of ${p.dam_tag} (calf ${p.calf && p.calf.tag})`;
+  return "A saved change";
+}
+
+// Tapping the pill walks through each refused entry with the server's own
+// reason and asks, one by one, whether to throw it away. Keep is the way
+// out (button, backdrop, Escape), so a user who just wants to read the
+// reasons loses nothing.
+async function reviewFailedEntries() {
+  const failed = await IDB.getFailed();
+  if (!failed.length) {
+    Kudde.toast(Kudde.isOffline() ? "Offline - changes will sync later" : "Everything on this device has synced");
+    return;
+  }
+  for (const entry of failed) {
+    const discard = await Kudde.confirm({
+      title: `${describeOutboxEntry(entry)} was not saved`,
+      message: `The server said: ${entry.error || "no reason given"}\nDiscard it from this device, or keep it here to look at later.`,
+      confirmLabel: "Discard", cancelLabel: "Keep", danger: true,
+    });
+    if (discard) await IDB.discard(entry.uuid);
+  }
+  await refreshSyncStatusPill();
+}
+
+// trySync is called from four places - startup, the 20s interval, the
+// browser's "online" event and pull-to-refresh - and two of those routinely
+// fire together the moment a device comes back into signal. Two overlapping
+// runs read the same outbox and post every entry in it twice; the second
+// copy of an animal is caught by the unique tag, but nothing distinguishes a
+// duplicated event, so the herd would gain a second identical weighing.
+// Observed as a 409 in a browser run before this guard existed. Boord's
+// field app carries the same one (syncLoop: "interval + online event + PTR
+// can overlap; never double-post").
+//
+// The guard is belt to the server's braces, not a replacement for them: it
+// cannot help across a reload or a second tab, which is what client_uuid is
+// for.
+let syncBusy = false;
+
+async function trySync() {
+  if (syncBusy) return;
+  syncBusy = true;
+  try {
+    const pending = await IDB.getPending();
+    failedCount = (await IDB.getFailed()).length;
+    updateSyncStatusPill(pending.length);
+    if (!pending.length || Kudde.isOffline()) return;
+    // Signed in with no signal this morning: the token comes first.
+    if (!await KuddeSignIn.ensureToken()) return;
+
+    for (const entry of pending) {
+      try {
+        if (entry.kind === "animal") {
+          await Kudde.api("/api/animals", { method: "POST", body: entry.payload });
+        } else if (entry.kind === "event") {
+          await Kudde.api("/api/events", { method: "POST", body: entry.payload });
+        } else if (entry.kind === "bulk_movement") {
+          await Kudde.api("/api/events/movement/bulk", { method: "POST", body: entry.payload });
+        } else if (entry.kind === "calving") {
+          await Kudde.api("/api/calvings", { method: "POST", body: entry.payload });
+        } else if (entry.kind === "photo") {
+          await Kudde.apiUpload(
+            `/api/animals/${encodeURIComponent(entry.payload.tag)}/photos`,
+            photoFormData(entry.payload.blob, entry.payload.client_uuid || entry.uuid, entry.payload.type));
+        }
+        await IDB.markSynced(entry.uuid);
+      } catch (e) {
+        if (!Kudde.isNetworkError(e)) {
+          const status = parseInt(String(e && e.message || "").slice(0, 3), 10);
+          // 403 is about this DEVICE, not this entry (the farm-PC Kudde
+          // refused requests off Tailscale; Plaashek keeps the rule for any
+          // refusal of the phone itself): every entry would get the same answer. Marking them failed would bury a
+          // whole day's records behind a routing problem, so stop and retry
+          // the batch later, exactly as if the server were out of reach.
+          if (status === 403) break;
+          // 401 is the phone's sign-in, not the entry: keep everything
+          // queued until a card is scanned again (signin.js shows the screen).
+          if (status === 401) break;
+          // A 5xx is the server's own trouble and may well pass (a restart,
+          // a locked database). Leave it queued for the next pass, but move
+          // on so it doesn't hold up every entry behind it.
+          if (!(status >= 400 && status < 500)) continue;
+          // Any other 4xx is the server refusing this record outright (the
+          // tag was already added from another device, the animal it names
+          // was never created). A retry will get the same answer, so it
+          // stops being sent - but it is KEPT, marked failed with the
+          // server's reason, for the user to read and discard by tapping
+          // the sync pill. It used to be deleted here with only a
+          // console.warn, so a death or a weighing could vanish from the
+          // phone with nothing on screen to say so.
+          console.warn("[kudde] outbox entry refused by the server", entry, e);
+          await IDB.markFailed(entry.uuid, Kudde.errorDetail(e));
+          continue;
+        }
+        Kudde.setOffline(true);
+        break; // still offline - stop and retry the whole batch next time
+      }
+    }
+
+    await refreshSyncStatusPill();
+    await loadAnimals();
+      if (activeTag && document.getElementById("animalDetailModal").classList.contains("flex")) {
+      await renderAnimalPhotos();
+    }
+  } finally {
+    syncBusy = false;
+  }
+}
+
+// ---------------------------------------------------------------------
+// Wiring
+// ---------------------------------------------------------------------
+
+async function init() {
+  document.getElementById("appVersion").textContent = `v${Kudde.VERSION}`;
+  KuddeSignIn.init();
+  Kudde.offlineBanner("Offline - changes are saved on this device and will sync later");
+  Kudde.onOfflineChange = () => { refreshSyncStatusPill().catch(() => {}); };
+
+  document.getElementById("searchInput").addEventListener("input", renderAnimalList);
+  initDateChips();
+  renderToday();
+  document.getElementById("todayToggle").addEventListener("click", () => {
+    const list = document.getElementById("todayList");
+    list.classList.toggle("hidden");
+    document.getElementById("todayChevron").classList.toggle("fa-chevron-down", list.classList.contains("hidden"));
+    document.getElementById("todayChevron").classList.toggle("fa-chevron-up", !list.classList.contains("hidden"));
+  });
+  const setListFilter = (value) => {
+    listFilter = value;
+    try { localStorage.setItem(LIST_FILTER_KEY, value); } catch (_) { /* not remembered, still applied */ }
+    renderAnimalList();
+  };
+  document.getElementById("filterAliveBtn").addEventListener("click", () => setListFilter("alive"));
+  document.getElementById("filterAllBtn").addEventListener("click", () => setListFilter("all"));
+  document.getElementById("needsWeighingBtn").addEventListener("click",
+    () => setListFilter(listFilter === "weigh" ? "alive" : "weigh"));
+  document.getElementById("eventValue").addEventListener("input", () => {
+    Kudde.showWeightHint(document.getElementById("eventValueHint"), animals.find((a) => a.tag === activeTag),
+                   document.getElementById("eventValue").value);
+  });
+
+  document.getElementById("weighSessionBtn").addEventListener("click", () => openSessionSetup("weight"));
+  document.getElementById("treatSessionBtn").addEventListener("click", () => openSessionSetup("treatment"));
+  document.getElementById("cancelSessionBtn").addEventListener("click", closeSession);
+  document.getElementById("startSessionBtn").addEventListener("click", startSession);
+  document.getElementById("doneSessionBtn").addEventListener("click", closeSession);
+  document.getElementById("sessionSaveBtn").addEventListener("click", () => { saveSessionEntry().catch(() => {}); });
+  document.getElementById("sessionTag").addEventListener("input", syncSessionEntry);
+  document.getElementById("sessionValue").addEventListener("input", syncSessionEntry);
+  // Enter walks the two boxes the way a keypad user expects: tag, then kg,
+  // then save - a treat session has no kg box, so Enter on the tag saves.
+  document.getElementById("sessionTag").addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    if (session.kind === "weight") document.getElementById("sessionValue").focus();
+    else saveSessionEntry().catch(() => {});
+  });
+  document.getElementById("sessionValue").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); saveSessionEntry().catch(() => {}); }
+  });
+  document.getElementById("syncStatus").addEventListener("click", () => { reviewFailedEntries().catch(() => {}); });
+  document.getElementById("addAnimalBtn").addEventListener("click", openAddAnimal);
+  document.getElementById("newFemaleBtn").addEventListener("click", () => setNewSex("female"));
+  document.getElementById("newMaleBtn").addEventListener("click", () => setNewSex("male"));
+  document.getElementById("cancelAddAnimalBtn").addEventListener("click", closeAddAnimal);
+  document.getElementById("confirmAddAnimalBtn").addEventListener("click", confirmAddAnimal);
+  document.getElementById("closeDetailBtn").addEventListener("click", closeAnimalDetail);
+  document.getElementById("photoViewer").addEventListener("click", closePhotoViewer);
+  document.getElementById("scanSearchBtn").addEventListener("click", () => { openScanner("search").catch(() => {}); });
+  document.getElementById("scanSessionBtn").addEventListener("click", () => { openScanner("session").catch(() => {}); });
+  document.getElementById("cancelScanBtn").addEventListener("click", closeScanner);
+  document.getElementById("cancelEventBtn").addEventListener("click", closeEventModal);
+  document.getElementById("confirmEventBtn").addEventListener("click", confirmEvent);
+  document.getElementById("moveCampBtn").addEventListener("click", openMoveModal);
+  document.getElementById("cancelMoveBtn").addEventListener("click", closeMoveModal);
+  document.getElementById("backMoveBtn").addEventListener("click", backToMoveLocations);
+  document.getElementById("confirmMoveBtn").addEventListener("click", confirmMove);
+
+  document.querySelectorAll("#animalDetailModal .action-btn[data-kind]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (btn.dataset.kind === "birth") openCalving();
+      else openEventModal(btn.dataset.kind);
+    });
+  });
+  document.getElementById("cancelCalvingBtn").addEventListener("click", closeCalving);
+  document.getElementById("confirmCalvingBtn").addEventListener("click", () => { confirmCalving().catch(() => {}); });
+  document.getElementById("calfFemaleBtn").addEventListener("click", () => setCalfSex("female"));
+  document.getElementById("calfMaleBtn").addEventListener("click", () => setCalfSex("male"));
+
+  document.getElementById("takePhotoBtn").addEventListener("click", () => {
+    document.getElementById("photoInput").click();
+  });
+  document.getElementById("photoInput").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    e.target.value = ""; // so choosing the same file again still fires "change"
+    if (file && activeTag) await uploadAnimalPhoto(activeTag, file);
+  });
+
+  KWPTR.attach(async () => { await loadAnimals(); await trySync(); });
+  window.addEventListener("online", trySync);
+
+  // Nothing below until a worker has scanned in for today.
+  await KuddeSignIn.ready();
+  // Later scans (the next worker, the next morning) reload behind the gate.
+  KuddeSignIn.onSignedIn = () => {
+    loadAnimals().then(trySync).catch(() => {});
+    KuddeSignIn.refreshWorkers().catch(() => {});
+  };
+  await loadAnimals();
+  await trySync();
+  KuddeSignIn.refreshWorkers().catch(() => {});
+  setInterval(trySync, 20000);
+  setInterval(() => KuddeSignIn.checkDay(), 60000);
+}
+
+init().catch((e) => {
+  console.error("[kudde] failed to start", e);
+  document.body.innerHTML = `<div class="p-6 text-center text-red-600">${escapeHtml(startupFailureMessage(e))}</div>`;
+});
+
+// The Tailscale-only 403 (security.py) is the one startup failure a user
+// can fix themselves, and its message already says how - so it is shown on
+// its own. "Failed to start: 403 Kudde is only reachable..." buried the
+// instruction behind a status code and made a wrong address read as a
+// crash. Anything else keeps the prefix, because then something IS broken.
+function startupFailureMessage(e) {
+  const raw = String((e && e.message) || e || "");
+  if (/^403\b/.test(raw)) return Kudde.errorDetail(e);
+  return `Failed to start: ${raw}`;
+}
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register(window.PLAASHEK.serviceWorker, { scope: "/kudde/field" }).catch(() => {});
+}

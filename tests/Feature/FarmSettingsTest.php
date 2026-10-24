@@ -4,6 +4,7 @@ use App\Filament\Pages\FarmSettings;
 use App\Models\AuditLog;
 use App\Models\User;
 use App\Support\Farm;
+use App\Support\Settings;
 use Livewire\Livewire;
 
 it('lets the owner change the farm, and logs what changed', function () {
@@ -15,15 +16,11 @@ it('lets the owner change the farm, and logs what changed', function () {
         ->set('data.name', 'Bekfontein Noord')
         ->set('data.latitude', '-23.123456')
         ->set('data.longitude', '30.5')
-        ->set('data.season_start_month', '9')
-        ->set('data.frost_threshold', '1.5')
         ->call('save')
         ->assertHasNoErrors();
 
     expect(setting(Farm::NAME))->toBe('Bekfontein Noord')
-        ->and(position())->toBe(['lat' => -23.1235, 'lon' => 30.5])
-        ->and(app(Farm::class)->seasonStartMonth())->toBe(9)
-        ->and(app(Farm::class)->frostThreshold())->toBe(1.5);
+        ->and(position())->toBe(['lat' => -23.1235, 'lon' => 30.5]);
 
     $log = AuditLog::query()->where('action', 'settings.changed')->latest('id')->firstOrFail();
     expect($log->user_id)->toBe($owner->id)
@@ -59,4 +56,11 @@ it('is open to Plaashek staff', function () {
 
     $this->actingAs(User::query()->where('role', User::STAFF)->firstOrFail())
         ->get(FarmSettings::getUrl())->assertOk();
+});
+
+it('shows the owner as the farmer on a farm set up before the farmer was stored', function () {
+    $this->actingAs(farm(['owner_name' => 'Andre']));
+    app(Settings::class)->set(Farm::FARMER, null);
+
+    Livewire::test(FarmSettings::class)->assertFormSet(['farmer' => 'Andre']);
 });

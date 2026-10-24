@@ -33,7 +33,8 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => false,
+            // Signed, expiring URLs only: how the office shows workers' photos without making them public.
+            'serve' => true,
             'throw' => false,
             'report' => false,
         ],

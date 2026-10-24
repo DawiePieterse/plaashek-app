@@ -27,13 +27,43 @@ abstract class Module extends ServiceProvider
 
     /**
      * Office pages (Filament page classes) the module adds to the panel. Each should hide itself with
-     * canAccess() when the module is off.
+     * canAccess() when the module is off. A module's own settings screen extends App\Filament\ModuleSettings,
+     * which puts it in the shared Settings menu group.
      *
      * @return list<class-string>
      */
     public static function filamentPages(): array
     {
         return [];
+    }
+
+    /**
+     * Office resources (Filament resource classes: lists with their forms) the module adds, such as Kudde's
+     * camps. Each should refuse access with canViewAny() when the module is off.
+     *
+     * @return list<class-string>
+     */
+    public static function filamentResources(): array
+    {
+        return [];
+    }
+
+    /**
+     * The module's tile on the office Home page, or null for none. Only asked for when the farm has the module
+     * switched on. Keep it to a couple of quick queries: Home is the first page every office user opens.
+     */
+    public static function homeTile(): ?ModuleTile
+    {
+        return null;
+    }
+
+    /**
+     * A view to show in the office's top bar after the farm's name (Weather's "now"), or null. Keep it light:
+     * it is on every office page, so anything slow belongs in a request the view makes after the page is up.
+     */
+    public static function topbarView(): ?string
+    {
+        return null;
     }
 
     /** Absolute path of the module's own folder. */

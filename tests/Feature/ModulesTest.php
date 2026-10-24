@@ -14,7 +14,7 @@ it('keeps the free Weather module on whatever the table says', function () {
 it('switches modules from the command line, and refuses unknown ones', function () {
     farm();
 
-    $this->artisan('farm:modules', ['codes' => 'kudde'])->assertFailed();
+    $this->artisan('farm:modules', ['codes' => 'boord'])->assertFailed();
     $this->artisan('farm:modules', ['codes' => ''])->expectsOutputToContain('weer')->assertSuccessful();
 });
 

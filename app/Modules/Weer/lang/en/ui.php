@@ -4,6 +4,8 @@
 // (public/modules/weer/js/fields.js) and the quick read's sentences are still English only.
 return [
     'title' => 'Weather',
+    'settings_title' => 'Weather',
+    'tile_rain_7d' => 'rain, last 7 days',
     'back' => 'Office',
     'refresh' => 'Refresh',
     'settings' => 'Settings',
@@ -97,4 +99,25 @@ return [
     'Snow' => 'Snow',
     'Heavy snow' => 'Heavy snow',
     'Thunderstorm' => 'Thunderstorm',
+    'open_forecast' => 'Forecast and years',
+    'fill_history' => 'Fetch history',
+    'fill_history_hint' => "Fetches the farm's daily weather for this season and the last, so the charts and reports go back that far. Takes a few seconds.",
+    'history_filled' => 'Weather history fetched: :n days on record.',
+    'history_failed' => 'The history could not be fetched. Try again later.',
+    'stats' => [
+        'rain_7' => 'Rain, last 7 days', 'rain_30' => 'Rain, last 30 days', 'rain_season' => 'Rain this season',
+        'since' => 'Since :date', 'incomplete' => 'record incomplete', 'frost_nights' => 'Frost nights, 30 days',
+        'frost_hint' => 'At or below :t °C', 'extremes' => 'Hottest / coldest, 30 days', 'extremes_hint' => 'Highest day, lowest night',
+        'et0_7' => 'Evaporation, 7 days', 'et0_hint' => 'ET0: what a crop uses in this weather',
+    ],
+    'charts' => [
+        'last_30' => 'The last 30 days', 'rain' => 'Rain mm', 'max' => 'Highest °C', 'min' => 'Lowest °C',
+        'season' => 'Rain by month', 'this_season' => 'This season', 'last_season' => 'Last season',
+        'temperature' => 'Temperature by month', 'avg_max' => 'Average high', 'avg_min' => 'Average low',
+    ],
+    'reports' => [
+        'daily' => 'Daily weather', 'monthly' => 'Weather by month', 'date' => 'Date', 'month' => 'Month', 'days' => 'Days',
+        'max' => 'High °C', 'min' => 'Low °C', 'rain' => 'Rain mm', 'wind' => 'Wind km/h', 'avg_max' => 'Average high °C',
+        'avg_min' => 'Average low °C', 'frost' => 'Frost nights',
+    ],
 ];

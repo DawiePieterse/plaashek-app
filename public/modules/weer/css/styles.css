@@ -14,6 +14,9 @@ body {
 }
 
 .app-header { background: var(--wx-blue); color: white; }
+.header-btn { display: inline-flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem;
+  border-radius: 9999px; color: rgb(255 255 255 / 0.8); line-height: 1; }
+.header-btn:hover { color: white; background: rgb(255 255 255 / 0.12); }
 
 .offline-banner {
   background: #fef3c7; color: #92400e; border-bottom: 1px solid #fcd34d;

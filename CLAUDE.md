@@ -24,17 +24,82 @@ Farm software as modules per farm, rebuilt on the BowlsBuddy model (`DawiePieter
   to settings write `AuditLog::record()`.
 - Comments explain *why*, usually a farm constraint. Keep that style.
 
+## Office layout
+
+- **Home** (`Filament\Pages\Home`, "Tuis") is the panel's first page: the account card, then one tile per
+  module (`Widgets\ModuleTiles`). The core adds the Workers tile; a module gives its own with
+  `Module::homeTile()` (a `ModuleTile`: label, emoji icon, one number, caption, link), asked only when on.
+- **Top bar**: the farm's name, then each enabled module's `Module::topbarView()` (Weather's "now", fetched
+  from `/weer/now` after the page loads), and the release from `config('plaashek.version')` (the `VERSION`
+  file `build-afrihost.sh` writes; "dev" in a clone). Global search is off: it crowded the phone's top bar.
+- **Settings** is one menu group: Farm settings (only what sets the farm up: name, farmer, phone, language,
+  position), Workers, then each module's own screen, a subclass of `App\Filament\ModuleSettings`
+  (owner only, hidden while the module is off, saves through `Settings` and the audit log).
+- **Each module has a screen** (its menu entry and Home tile): KPI cards (`StatsOverviewWidget`), charts on
+  `App\Filament\Widgets\FarmChart` (fixed height, Filament's own Chart.js, no CDN), short lists, and the
+  **Reports** button (`App\Filament\Actions\ReportsAction`). Kudde: `Filament\KuddePage`; Weather:
+  `Filament\WeatherPage` (its record from `weather_days`, a button into `/weer` and one to backfill history);
+  Workers: stats and reports on the list.
+- **Reports** (`app/Reports`): a `Report` gives its key, label, own filters, columns and rows; the action adds
+  the standard periods (`DateRanges`, "this season" from Weather's season start) and exports with
+  `ReportExport` to Excel (OpenSpout) or PDF (Dompdf, DejaVu Sans for ê/ë, remote fetches off). A module lists
+  its reports in a static `reports()`; Kudde's are in `Reports/`, derived like everything else (`HerdHistory`
+  for the herd over time and daily gain).
+- **Top bar pills**: online (the server's `/up` answering, checked every minute, not the phone's radio) and the
+  release.
+- The panel's Tailwind build has only Filament's classes: our views use the plain CSS in
+  `resources/views/filament/styles.blade.php` or inline styles, not Tailwind utilities.
+- A module adds Filament resources with `Module::filamentResources()` (Kudde: the camps).
+
 ## Weather module
 
 - `OpenMeteoProxy`: four endpoints (`archive`, `hf`, `fc`, `climate`), farm position only, cache in
   `weer_responses` (a range ended 8+ days ago: for ever; otherwise an hour; Open-Meteo's 400s: a day; failures
   never; Open-Meteo down: the last answer).
 - `weer:days` fills `weather_days` nightly at 05:10 for any module that stamps weather.
+- Its settings screen (`Filament\WeatherSettings`) holds the season start and frost threshold.
 - The page is `/weer` (`views/page.blade.php`), its own installable app with a service worker served by a
   route (`/weer/sw.js`, scope `/weer`, cache name hashed from the shell files: no manual CACHE bump).
 - Screens: `public/modules/weer/js/`, Weather Compare's code with the map, second location and AI removed and
   `farm.js` (forecast, rain record, frost) added. Pure logic is tested in `tests/js/`.
 - Field names in `fields.js` and the quick read (`insights.js`) are English only for now.
+
+## Workers (core)
+
+- `workers` (`App\Models\Worker`) is the minimal register under Farm settings: number, names, cell, photo,
+  active. Workers are never deleted, only made inactive; changes write `AuditLog`. Payroll and identity belong
+  to the Werkers module's own tables.
+- The card's QR holds the number only (`App\Support\WorkerCard`, SVG from `chillerlan/php-qrcode`, ECC H), the
+  same as Boord's badges, so Bekfontein's printed cards keep working. Sheet at `/workers/cards?ids=`.
+- Photos live on the private `local` disk (`serve` on, so the office shows them by signed URL only).
+- `App\Support\NaturalOrder` sorts tags and numbers the way they are read (B2 before B10).
+
+## Kudde module
+
+- The farm-PC Kudde (`DawiePieterse/Kudde`) is the spec; its pytest cases are ported in `tests/Feature/Kudde/`.
+- Stored: `kudde_animals` (identity) and `kudde_events` (everything that happens). Derived, never stored, in
+  one place (`Support\HerdState`): current camp, last weight, withdrawal end, has calved, class
+  (`Support\AnimalClass`). Every write goes through `Support\Herd`, idempotent on `client_uuid` (a batch
+  member's is `<uuid>:<animal id>`, a calf's birth `<uuid>:calf`).
+- Camps (owner's call: they are where the animals are kept, so they live with Kudde): the list is
+  `Filament\Resources\Camps`, nested under Kudde's settings and opened from its "Manage camps" button, and refuses
+  to archive a camp with alive animals. The `camps` table, model and `App\Support\CampNames` stay in the core
+  (renaming them is churn for nothing): a record keeps the typed name as text, snapped to the office's spelling;
+  an unknown camp is added as it is used; names compared with `MB_CASE_FOLD` in PHP.
+- Tags are unique ignoring capitals (the collation); sorted naturally by `Support\Tags::compare`.
+- Weather comes from `weather_days` through `App\Modules\Weer\WeatherDays`, never a live call;
+  `kudde:weather` (05:25) stamps events saved before their day was filled.
+- API at `/kudde/api/*` behind the office login; a viewer only reads. The same methods at
+  `/kudde/field/api/*` behind a worker's card session (`Support\FieldSession`, middleware `kudde.worker`,
+  Bearer token, valid until the farm's midnight), less corrections, camp management and exports. Records get
+  `worker_id` from the session, or from `captured_by` (the worker signed in when an outbox record was made).
+- The field app is `/kudde/field` (`views/field.blade.php`, `public/modules/kudde/`): old Kudde's field screens
+  plus `js/signin.js`, the daily card scan. Service worker served by a route, cache name hashed from the shell.
+  Card scans have their own named limiter (`kudde-sign-in`): a plain `throttle:N,1` shares its counter with
+  the group's.
+- Generated notes ("Calf K1", "Born to C1") are English: English in the database.
+- Settings screen `Filament\KuddeSettingsPage`: "weigh every" (`Support\KuddeSettings`, default 182 days, also
+  sent to the field app), the camps' "Manage camps" button and the field app's address as a QR code.
 
 ## Session setup (Claude Code on the web)
 

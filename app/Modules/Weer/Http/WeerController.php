@@ -2,9 +2,8 @@
 
 namespace App\Modules\Weer\Http;
 
-use App\Filament\Pages\FarmSettings;
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Modules\Weer\Filament\WeatherSettings;
 use App\Modules\Weer\OpenMeteoProxy;
 use App\Support\Farm;
 use Illuminate\Http\JsonResponse;
@@ -27,7 +26,6 @@ class WeerController extends Controller
     public function page(Farm $farm): View
     {
         $position = $farm->position();
-        $user = auth()->user();
 
         return view('weer::page', [
             'page' => [
@@ -40,7 +38,8 @@ class WeerController extends Controller
                     'frostThreshold' => $farm->frostThreshold(),
                 ],
                 't' => trans('weer::ui'),
-                'settingsUrl' => $user instanceof User && $user->isOwner() ? FarmSettings::getUrl() : null,
+                // The gear opens Weather's own settings (season start, frost); the position is in Farm settings.
+                'settingsUrl' => WeatherSettings::canAccess() ? WeatherSettings::getUrl() : null,
                 'serviceWorker' => route('weer.sw', absolute: false),
                 'scope' => '/weer',
             ],
@@ -64,6 +63,52 @@ class WeerController extends Controller
             ->header('Content-Type', 'application/json')
             ->header('Cache-Control', 'private, no-store')
             ->header('X-Weer-Cache', $result['cached'] ? 'hit' : 'miss');
+    }
+
+    /**
+     * The weather now at the farm, for the office's top bar: temperature, a word and a symbol. Through the
+     * proxy, so it is the cached forecast's "current" (at most an hour old) and costs no extra Open-Meteo call
+     * most of the time. 204 when there is nothing to show (no position, Open-Meteo down with nothing cached):
+     * the top bar then simply shows no weather.
+     */
+    public function now(OpenMeteoProxy $proxy): JsonResponse|Response
+    {
+        $result = $proxy->get('fc', ['current' => 'temperature_2m,weather_code,is_day', 'timezone' => 'auto']);
+        $current = $result['status'] === 200 ? (json_decode($result['body'], true)['current'] ?? null) : null;
+
+        if (! is_array($current) || ! isset($current['temperature_2m'])) {
+            return response()->noContent();
+        }
+
+        [$word, $day, $night] = self::describe((int) ($current['weather_code'] ?? -1));
+
+        return response()->json([
+            'temp' => (int) round((float) $current['temperature_2m']),
+            'text' => $word === '' ? '' : __('weer::ui.'.$word),
+            'icon' => ($current['is_day'] ?? 1) ? $day : $night,
+        ])->header('Cache-Control', 'private, max-age=300');
+    }
+
+    /**
+     * WMO weather codes (Open-Meteo's weather_code) as the Weather page's words (ui.js describeWeather) and a
+     * symbol for day and night. Emoji, because the office has no Font Awesome and a phone draws these anyway.
+     *
+     * @return array{0: string, 1: string, 2: string}
+     */
+    private static function describe(int $code): array
+    {
+        return match (true) {
+            $code === 0 => ['Clear', '☀️', '🌙'],
+            in_array($code, [1, 2], true) => ['Partly cloudy', '⛅', '☁️'],
+            $code === 3 => ['Overcast', '☁️', '☁️'],
+            in_array($code, [45, 48], true) => ['Fog', '🌫️', '🌫️'],
+            in_array($code, [51, 53, 55, 56, 57], true) => ['Drizzle', '🌦️', '🌧️'],
+            in_array($code, [61, 63, 66, 80, 81], true) => ['Rain', '🌧️', '🌧️'],
+            in_array($code, [65, 67, 82], true) => ['Heavy rain', '🌧️', '🌧️'],
+            in_array($code, [71, 73, 77, 85, 75, 86], true) => ['Snow', '❄️', '❄️'],
+            in_array($code, [95, 96, 99], true) => ['Thunderstorm', '⛈️', '⛈️'],
+            default => ['', '🌡️', '🌡️'],
+        };
     }
 
     /**

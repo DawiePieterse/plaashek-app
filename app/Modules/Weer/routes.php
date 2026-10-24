@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 // field shell exists (built with Kudde), with a service worker scoped to /weer so it opens offline.
 Route::middleware(['web', 'module:weer'])->prefix('weer')->group(function () {
     Route::get('/', [WeerController::class, 'page'])->middleware('auth')->name('weer.page');
+    Route::get('/now', [WeerController::class, 'now'])->middleware('auth')->name('weer.now');
     Route::get('/sw.js', [WeerController::class, 'serviceWorker'])->name('weer.sw');
     Route::get('/manifest.webmanifest', [WeerController::class, 'manifest'])->name('weer.manifest');
     Route::get('/api/{endpoint}', [WeerController::class, 'api'])

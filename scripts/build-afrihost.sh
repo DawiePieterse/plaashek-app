@@ -30,6 +30,13 @@ else
         --exclude='./storage/framework/views/*.php' --exclude='./storage/framework/cache/data/*' -cf - . | tar -x -C "$STAGE"
 fi
 
+# The release, shown in the office's top bar (config/plaashek.php): the commit's date and short hash.
+if git -C "$ROOT" rev-parse --verify -q HEAD >/dev/null 2>&1; then
+    git -C "$ROOT" log -1 --format='%cd · %h' --date=format:'%Y.%m.%d' > "$STAGE/VERSION"
+else
+    date +'%Y.%m.%d · uncommitted' > "$STAGE/VERSION"
+fi
+
 echo "Installing production dependencies..."
 (cd "$STAGE" && composer install --no-dev --no-interaction --no-progress --prefer-dist \
     --optimize-autoloader --classmap-authoritative --quiet)
