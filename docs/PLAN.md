@@ -352,7 +352,7 @@ farm only.
 ## 3. Hosting layout
 
 Afrihost Linux hosting. **One database per farm**, whatever modules it runs: **Bronze Pro** (R135 pm, 20
-databases, 100 subdomains) holds about 19 farms beside a test farm; **Silver Pro** (100 databases) after that.
+databases, 100 subdomains) holds about 19 farms beside the demo farm; **Silver Pro** (100 databases) after that.
 
 | What | Where |
 |---|---|
@@ -366,7 +366,8 @@ databases, 100 subdomains) holds about 19 farms beside a test farm; **Silver Pro
 | HTTPS | AutoSSL per subdomain; Force HTTPS only once the certificate is real |
 | Cron | One cPanel cron per farm: `php artisan schedule:run` every minute (weather backfill, backups, cleanup) |
 
-Reserved, never a farm name: `www`, `test`, `mail`, `admin`, `hek`, `app`, `api`. Everything else follows
+Reserved, never a farm name: `www`, `demo` (the demo farm, for trying releases and showing farmers), `mail`,
+`admin`, `hek`, `app`, `api`. Everything else follows
 `bowlsbuddy-app/docs/DEPLOY-AFRIHOST.md`, copied as `docs/DEPLOY-AFRIHOST.md`.
 
 ---
@@ -548,7 +549,7 @@ Same checks as BowlsBuddy, in CI on every push:
 
 | Phase | What | Done when | Estimate |
 |---|---|---|---|
-| 0 | Skeleton from BowlsBuddy (Laravel 12, Filament 4, CI, session hook, build script, deploy doc); Afrihost package (bought: server `arno.aserv.co.za`), farm subdomains' DNS pointed at it, landing page | Empty app live at `test.plaashek.co.za` over HTTPS | ½ week |
+| 0 | Skeleton from BowlsBuddy (Laravel 12, Filament 4, CI, session hook, build script, deploy doc); Afrihost package (bought: server `arno.aserv.co.za`), farm subdomains' DNS pointed at it, landing page | Demo farm live at `demo.plaashek.co.za` over HTTPS | ½ week |
 | 1 | Minimal core: modules table and loading, `farm:create`, setup page, office login and roles, Farm settings, `af`/`en`, audit log | A farm can be created, its owner signs in and sets the farm's position | 1 week |
 | 2 | Weather: proxy and cache, `weather_days`, Weather Compare's screens at `/weer` and in the office, rain record, frost, PDF, offline | Bekfontein's forecast, rain record and a year-against-year chart, offline after first load | 1½ weeks |
 | 3 | Bekfontein live on Weather (free), `update-all.sh`, privacy text | Bekfontein uses it for a fortnight | ½ week + trial |

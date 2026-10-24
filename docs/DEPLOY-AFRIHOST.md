@@ -15,18 +15,21 @@ A separate Afrihost Linux hosting package for Plaashek, on the same ClientZone l
 | Domain | `plaashek.co.za`, expires 12 Sep 2027 |
 | Package, cPanel user, database limit | not recorded yet |
 
-Bronze Pro (20 databases) holds about 19 farms beside a test farm; Silver Pro (100 databases) after that.
+Bronze Pro (20 databases) holds about 19 farms beside the demo farm; Silver Pro (100 databases) after that.
 
 **DNS (24 October 2026):** `www.plaashek.co.za` resolves to `185.199.111.153`, a GitHub Pages address: the
 landing page is still served from the `Plaashek` repo, not from this server. That can stay. Each farm's
-subdomain (`<farm>.plaashek.co.za`, and `test.`) needs its own A record pointing at `arno.aserv.co.za`'s IP,
+subdomain (`<farm>.plaashek.co.za`, and `demo.`) needs its own A record pointing at `arno.aserv.co.za`'s IP,
 added in cPanel > Zone Editor (or ClientZone DNS), before AutoSSL can issue its certificate.
 
 **Weather data:** leave `OPEN_METEO_API_KEY` blank while Plaashek is in development and marketing (the free
 API). Set it on every farm once farms pay.
 
 `public_html` holds only the landing page (the `Plaashek` repo's `index.html`, `en.html`, `photos/`). Farm names
-never used as subdomains: `www`, `test`, `mail`, `admin`, `hek`, `app`, `api`.
+never used as subdomains: `www`, `demo`, `mail`, `admin`, `hek`, `app`, `api`.
+
+**The demo farm** is `demo.plaashek.co.za` (folder `plaashek-demo/`, database `<prefix>_demo`): the first install,
+used to try each release and to show Plaashek to farmers. It holds no real farm's data.
 
 ## What gets built
 
