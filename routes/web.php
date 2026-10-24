@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ManifestController;
 use App\Http\Controllers\SetupController;
 use App\Http\Controllers\WorkerCardController;
 use App\Services\FarmSetup;
@@ -14,3 +15,6 @@ Route::post('/setup', [SetupController::class, 'store'])->name('setup.store')->m
 
 // Workers' cards, printed from the browser (the Workers list under Farm settings opens this with its selection).
 Route::get('/workers/cards', WorkerCardController::class)->middleware('auth')->name('workers.cards');
+
+// The office's home-screen app (its icon and name).
+Route::get('/manifest.webmanifest', ManifestController::class)->name('manifest');

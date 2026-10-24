@@ -63,6 +63,7 @@ class AdminPanelProvider extends PanelProvider
                 ...$modulePages,
             ])
             // The farm's name and the weather on every page, the release on the right (owner's sketch, 25 October).
+            ->renderHook(PanelsRenderHook::HEAD_END, fn () => view('filament.head'))
             ->renderHook(PanelsRenderHook::STYLES_AFTER, fn () => view('filament.styles'))
             ->renderHook(PanelsRenderHook::TOPBAR_START, fn () => view('filament.topbar.farm', [
                 'farm' => app(Farm::class)->name(),

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#0A2F6B"/>
+  <g id="gate" transform="translate(256 256) scale(1.15) translate(-256 -206)">
+    <rect x="70" y="306" width="372" height="10" rx="5" fill="#061f4a"/>
+    <rect x="84" y="104" width="30" height="210" rx="6" fill="#d6a35c"/>
+    <rect x="398" y="104" width="30" height="210" rx="6" fill="#d6a35c"/>
+    <rect x="80" y="96" width="38" height="14" rx="5" fill="#b7833f"/>
+    <rect x="394" y="96" width="38" height="14" rx="5" fill="#b7833f"/>
+    <g fill="#ffffff">
+      <rect x="126" y="128" width="14" height="168" rx="4"/>
+      <rect x="372" y="128" width="14" height="168" rx="4"/>
+      <rect x="126" y="128" width="260" height="14" rx="4"/>
+      <rect x="126" y="166" width="260" height="12" rx="4"/>
+      <rect x="126" y="204" width="260" height="12" rx="4"/>
+      <rect x="126" y="242" width="260" height="12" rx="4"/>
+      <rect x="126" y="282" width="260" height="14" rx="4"/>
+    </g>
+    <line x1="140" y1="289" x2="372" y2="135" stroke="#ffffff" stroke-width="14" stroke-linecap="round"/>
+    <g fill="#9ca3af">
+      <rect x="110" y="138" width="22" height="8" rx="3"/>
+      <rect x="110" y="278" width="22" height="8" rx="3"/>
+    </g>
+  </g>
+</svg>
