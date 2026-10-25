@@ -5,6 +5,7 @@ namespace App\Modules\Kudde;
 use App\Modules\Kudde\Console\StampWeather;
 use App\Modules\Kudde\Filament\KuddePage;
 use App\Modules\Kudde\Filament\KuddeSettingsPage;
+use App\Modules\Kudde\Filament\Resources\Animals\AnimalResource;
 use App\Modules\Kudde\Filament\Resources\Camps\CampResource;
 use App\Modules\Kudde\Filament\Resources\Species\SpeciesResource;
 use App\Modules\Kudde\Models\Animal;
@@ -51,7 +52,7 @@ class KuddeModule extends Module
     /** @return list<class-string<\Filament\Resources\Resource>> */
     public static function filamentResources(): array
     {
-        return [CampResource::class, SpeciesResource::class];
+        return [AnimalResource::class, CampResource::class, SpeciesResource::class];
     }
 
     public static function homeTile(): ?ModuleTile
