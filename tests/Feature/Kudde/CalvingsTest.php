@@ -64,3 +64,13 @@ it('works without a camp', function () {
         ->and(timeline('C1-24'))->toBe([['birth', '', 'Born to C1']])
         ->and(collect($this->getJson(kapi('/animals'))->json())->pluck('camp', 'tag')->all())->toBe(['C1' => null, 'C1-24' => null]);
 });
+
+it('records twins as one calving: the first calf and the rest of the young', function () {
+    $body = calve(['young' => [['tag' => 'C1-25', 'sex' => 'female', 'breed' => 'Nguni']]])->assertOk()->json();
+
+    expect(array_column($body['young'], 'tag'))->toBe(['C1-24', 'C1-25'])
+        ->and(timeline('C1'))->toBe([['birth', 'Bo-kamp', 'Young C1-24, C1-25 - pulled, up and sucking']])
+        ->and(timeline('C1-25'))->toBe([['birth', 'Bo-kamp', 'Born to C1']])
+        ->and(calve(['young' => [['tag' => 'C1-25', 'sex' => 'female']]])->json('replayed'))->toBeTrue()
+        ->and($this->getJson(kapi('/animals'))->json())->toHaveCount(3);
+});
