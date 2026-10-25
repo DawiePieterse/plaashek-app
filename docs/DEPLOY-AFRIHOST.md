@@ -56,6 +56,9 @@ scripts/build-afrihost.sh        # build/afrihost/plaashek.zip
    farm:create`. Without a terminal, open the subdomain after migrating: the first-run setup page asks the same.
 7. **Cron:** cPanel > Cron Jobs, every minute:
    `cd ~/plaashek-<farm> && php artisan schedule:run >> /dev/null 2>&1` (the nightly weather fill).
+   **It must be every minute (`* * * * *`), never every 15 minutes:** the tasks run at exact minutes (`weer:days` 05:10,
+   `kudde:weather` 05:25), and `schedule:run` only fires them when it is called in that minute. Check the Minute
+   column says `*`; the demo's job was once found at `*/15`, which would have skipped both tasks for ever.
 8. **HTTPS:** wait for AutoSSL's certificate, then Force HTTPS Redirect. Logins and "Use my location" need it.
 9. Sign in at `/admin` as the owner, check Farm settings has the farm's position, open Weather. Add the farm
    to `docs/FARMS.md`.
@@ -92,6 +95,11 @@ rename `plaashek-<farm>.previous` to `plaashek-<farm>`, move `.env` and `storage
 `storage/framework/down`. Migrations only ever add, so the old code runs on the new tables.
 
 Disk: a farm needs room for a second copy of the code (about 70 MB) while it is being updated.
+
+**Without `update-all.sh` (how the demo was first updated, 25 October 2026):** upload `plaashek.zip` into the farm's
+folder, Extract it over the folder (`.env` and `storage/` are not in the zip, so they stay), delete the zip, then run
+`migrate --force` from a one-off every-minute cron job writing to `~/migrate.log`, read the log, and delete the job.
+Files a release removed are not deleted this way; `update-all.sh` swaps folders and does not have that problem.
 
 ## Support access
 
