@@ -235,6 +235,8 @@ Everything the farm-PC Kudde does today is the v1 checklist. Tick off here as bu
 - [ ] Checks, warnings not blocks: sire male, dam female, same species, born before the offspring
 - [ ] Animal page (office and field): three generations of pedigree, all offspring, a dam's births with the
   interval between them, a sire's offspring with their weaning weights
+  (field app done: the animal sheet's Family section, from `GET /animals/{tag}/lineage`, `Support\Lineage`, parents
+  found by tag within the species; weaning weights and the office page wait for breeding and the herd tab)
 - [ ] With breeding: at a birth the sire is suggested from the male that was with her about one gestation
   earlier, or from her AI record; choosing a male for a female warns if they share a grandparent or
   great-grandparent

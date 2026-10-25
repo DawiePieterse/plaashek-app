@@ -16,6 +16,7 @@ use App\Modules\Kudde\Support\Herd;
 use App\Modules\Kudde\Support\HerdException;
 use App\Modules\Kudde\Support\HerdState;
 use App\Modules\Kudde\Support\KuddeSettings;
+use App\Modules\Kudde\Support\Lineage;
 use App\Modules\Kudde\Support\Tags;
 use App\Support\CampNames;
 use Illuminate\Http\JsonResponse;
@@ -69,6 +70,14 @@ class KuddeApiController extends Controller
         $animal = HerdState::animalByTag($tag, $this->species($request));
 
         return response()->json(HerdState::load()->describe($animal));
+    }
+
+    /** Parents to great-grandparents, offspring, and a mother's births with their intervals (Support\Lineage). */
+    public function lineage(Request $request, string $tag): JsonResponse
+    {
+        $animal = HerdState::animalByTag($tag, $this->species($request));
+
+        return response()->json((new Lineage(HerdState::load()))->of($animal));
     }
 
     public function storeAnimal(Request $request): JsonResponse

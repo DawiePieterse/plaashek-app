@@ -513,6 +513,8 @@ async function openAnimalDetail(tag) {
 
   await renderAnimalPhotos();
 
+  renderFamily(tag).catch(() => {});
+
   try {
     const events = await Kudde.api(`/api/animals/${encodeURIComponent(tag)}/events`);
     Kudde.setOffline(false);
@@ -533,6 +535,89 @@ async function openAnimalDetail(tag) {
     Kudde.setOffline(true);
     eventsEl.innerHTML = `<div class="text-slate-400">Offline - history unavailable</div>`;
   }
+}
+
+// ---------------------------------------------------------------------
+// Family: pedigree, offspring, births
+// ---------------------------------------------------------------------
+//
+// Worked out by the server (Support\Lineage) from the tags recorded on each
+// animal, within its species. A parent never recorded here (a borrowed bull)
+// shows by its tag, greyed; one on record opens its own sheet.
+
+function familyCell(node, role, gen) {
+  if (!node) {
+    return `<div class="rounded-lg border border-dashed border-slate-200 px-2 py-1 text-slate-300 text-xs">${role}</div>`;
+  }
+  const sub = node.on_record ? Kudde.classLabel(node.class) : "Not on record";
+  const open = node.on_record ? ` data-family-tag="${escapeHtml(node.tag)}"` : "";
+  return `<button type="button"${open} class="w-full text-left rounded-lg px-2 py-1 ${node.on_record ? "bg-slate-100" : "bg-slate-50 text-slate-400"} ${gen === 1 ? "" : "text-xs"}">
+      <div class="font-semibold truncate">${escapeHtml(node.tag)}</div>
+      <div class="text-[11px] text-slate-500 truncate">${escapeHtml(role)} · ${escapeHtml(sub)}</div>
+    </button>`;
+}
+
+// The classic pedigree layout: parents in the first column, each spanning
+// its four great-grandparent rows; grandparents two; great-grandparents one.
+function pedigreeHtml(tree) {
+  const cells = [];
+  const place = (node, role, gen, row, span) => {
+    cells.push(`<div style="grid-column:${gen};grid-row:${row} / span ${span};align-self:center">${familyCell(node, role, gen)}</div>`);
+    if (gen < 3) {
+      const half = span / 2;
+      place(node && node.dam, "Dam", gen + 1, row, half);
+      place(node && node.sire, "Sire", gen + 1, row + half, half);
+    }
+  };
+  place(tree.dam, "Dam", 1, 1, 4);
+  place(tree.sire, "Sire", 1, 5, 4);
+  return `<div class="grid gap-1" style="grid-template-columns:1.1fr 1fr 1fr;grid-template-rows:repeat(8,auto)">${cells.join("")}</div>`;
+}
+
+async function renderFamily(tag) {
+  const el = document.getElementById("detailFamily");
+  el.innerHTML = "";
+  let tree;
+  try {
+    tree = await Kudde.api(`/api/animals/${encodeURIComponent(tag)}/lineage`);
+  } catch (e) {
+    if (!Kudde.isNetworkError(e)) throw e;
+    el.innerHTML = `<div class="text-sm font-semibold text-slate-500 mb-1">Family</div><div class="text-sm text-slate-400">Offline - family unavailable</div>`;
+    return;
+  }
+  if (activeTag !== tag) return;   // another animal was opened meanwhile
+
+  const parts = [`<div class="text-sm font-semibold text-slate-500 mb-2">Family</div>`];
+  if (tree.dam || tree.sire) parts.push(pedigreeHtml(tree));
+  else parts.push(`<div class="text-sm text-slate-400">No parents recorded</div>`);
+
+  if (tree.births.length) {
+    const gaps = tree.births.map((b) => b.interval_days).filter((d) => d != null);
+    const avg = gaps.length ? Math.round(gaps.reduce((a, b) => a + b, 0) / gaps.length) : null;
+    parts.push(`<div class="text-xs font-semibold text-slate-500 mt-3 mb-1">Births${avg != null ? ` · average ${avg} days apart` : ""}</div>`);
+    parts.push(tree.births.map((b) => {
+      const what = [b.young.join(", "),
+        b.litter ? `litter of ${b.litter.born_alive}${b.litter.stillborn ? ` (+${b.litter.stillborn} stillborn)` : ""}${b.litter.weaned != null ? `, ${b.litter.weaned} weaned` : ""}` : ""]
+        .filter(Boolean).join(" · ");
+      return `<div class="flex justify-between text-sm py-0.5 border-b border-slate-100 last:border-0">
+          <span>${Kudde.fmtDate(b.date)} <span class="text-slate-500">${escapeHtml(what)}</span></span>
+          <span class="text-slate-400">${b.interval_days != null ? `${b.interval_days} d` : ""}</span>
+        </div>`;
+    }).join(""));
+  }
+
+  if (tree.offspring.length) {
+    parts.push(`<div class="text-xs font-semibold text-slate-500 mt-3 mb-1">Offspring (${tree.offspring.length})</div>`);
+    parts.push(`<div class="flex flex-wrap gap-1">${tree.offspring.map((o) => `<button type="button" data-family-tag="${escapeHtml(o.tag)}"
+        class="rounded-full px-3 py-1 text-sm ${o.status === "alive" ? "bg-slate-100" : "bg-slate-50 text-slate-400 line-through"}">${escapeHtml(o.tag)}</button>`).join("")}</div>`);
+  }
+
+  el.innerHTML = parts.join("");
+  el.querySelectorAll("[data-family-tag]").forEach((b) => b.addEventListener("click", () => {
+    const t = b.dataset.familyTag;
+    if (animals.some((a) => a.tag === t)) openAnimalDetail(t);
+    else Kudde.toast(`${t} is not in this phone's herd list`);
+  }));
 }
 
 async function renderAnimalPhotos() {

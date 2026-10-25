@@ -97,6 +97,9 @@ Farm software as modules per farm, rebuilt on the BowlsBuddy model (`DawiePieter
 - Births (`Herd::recordBirth`, `POST /calvings`): `calf` (one, as before), `young` (twins) or `litter` (counted on
   the mother, `kudde_litters`, for species tagged at weaning: pigs). `POST /litters/{id}/wean` tags the young,
   with her as dam and the litter's date as birth date. The field API has no route-model binding: look ids up.
+- Lineage (`Support\Lineage`, `GET /animals/{tag}/lineage`): parents to great-grandparents found by tag within the
+  species (the latest animal with that tag born before the young one), offspring, a mother's births (tagged young
+  by date plus litters) with the interval between them. Shown in the field app's animal sheet ("Family").
 - Weather comes from `weather_days` through `App\Modules\Weer\WeatherDays`, never a live call;
   `kudde:weather` (05:25) stamps events saved before their day was filled.
 - API at `/kudde/api/*` behind the office login; a viewer only reads. The same methods at

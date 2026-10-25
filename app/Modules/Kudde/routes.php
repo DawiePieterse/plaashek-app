@@ -13,6 +13,7 @@ Route::middleware(['web', 'auth', 'module:kudde', 'throttle:600,1'])->prefix('ku
     Route::get('/animals/{tag}', [Api::class, 'animal'])->name('animal');
     Route::patch('/animals/{tag}', [Api::class, 'updateAnimal'])->name('animal.update');
     Route::get('/animals/{tag}/events', [Api::class, 'animalEvents'])->name('animal.events');
+    Route::get('/animals/{tag}/lineage', [Api::class, 'lineage'])->name('animal.lineage');
 
     Route::get('/events', [Api::class, 'events'])->name('events');
     Route::post('/events', [Api::class, 'storeEvent'])->name('events.store');
@@ -54,6 +55,7 @@ Route::middleware([SetFarmLocale::class, 'module:kudde', 'throttle:600,1'])->pre
         Route::get('/animals', [Api::class, 'animals'])->name('animals');
         Route::post('/animals', [Api::class, 'storeAnimal'])->name('animals.store');
         Route::get('/animals/{tag}/events', [Api::class, 'animalEvents'])->name('animal.events');
+        Route::get('/animals/{tag}/lineage', [Api::class, 'lineage'])->name('animal.lineage');
         Route::post('/events', [Api::class, 'storeEvent'])->name('events.store');
         Route::post('/events/movement/bulk', [Api::class, 'moveAnimals'])->name('events.move');
         Route::post('/events/treatment/bulk', [Api::class, 'treatAnimals'])->name('events.treat');
