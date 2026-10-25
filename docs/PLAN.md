@@ -8,18 +8,23 @@ Phase 0–2 code written and tested locally (Pest 32, node:test 78, browser chec
 Not committed, not deployed: the repo and the Afrihost package don't exist yet.
 
 Plaashek is farm software sold as modules per farm: Kudde, Boord, Veldnotas, Stoor, Water, Bespuitings,
-Werkswinkel, Oudit, Span and Eienaar (the list on `plaashek.co.za`), plus a free Weather module (`weer`) and
-the Werkers module (`werkers`), the worker register. It is **one Laravel app**. Each farm gets its
+Werkswinkel and Oudit (the list on `plaashek.co.za`, less Span: owner's call, 24 October 2026), plus two free
+modules, Eienaar (`eienaar`, the owner's summary of the farm, the first module a farm has after installation) and
+Weather (`weer`), and the Werkers module (`werkers`), the worker register, which also takes in Span's time and
+attendance. It is **one Laravel app**. Each farm gets its
 own install and its own database, and the modules it has bought share that database, so "every app runs on the
 same blocks, camps, lines and people" (the website's promise) is true by construction.
 
-**Build order: Weather first, then Kudde.** Weather is free and small, and needs only a minimal core (office login
+**Build order: Weather first, then Eienaar beside it, then Kudde.** Weather is free and small, and needs only a minimal core (office login
 and Farm settings), so it proves the skeleton, the Afrihost layout and the module framework on Bekfontein before
 any farm records are at stake.
 
 **Kudde is the first paid module**: cattle recording for small farms, the animals and the handful of things that
 happen to them (birth, weighing, treatment, move between camps, sale, death). Building it also builds the core
 every later module stands on.
+
+**Eienaar (`eienaar`)**, free on every farm and on from installation, before any paid module: a summary of what
+is happening on the farm, drawn from the modules it runs, with AI analytics described in broad terms only (§2.7).
 
 **Weather (`weer`)**, free on every farm and built first: the farm's forecast, its rain record, and its weather
 against any year since 1940. It is the browser-only Weather Compare app
@@ -28,8 +33,8 @@ comparison, and with its Open-Meteo calls moved behind the farm's server.
 
 **Werkers (`werkers`) is the second paid module**: every person the farm employs, a photo and a printed ID card
 whose QR code identifies them, and a **simple payroll** (Bekfontein pays by hand today): pay runs, UIF and PAYE,
-payslips, and the bank and cash lists. It is the register Span, Boord's piece-work
-and every later "who did this" will use.
+payslips, and the bank and cash lists. Span is part of it: time and attendance per team and contractor crews
+(§2.4). It is the register Boord's piece-work and every later "who did this" will use.
 
 References, copied from and never imported:
 - the farm-PC Kudde (`DawiePieterse/Kudde`, FastAPI + SQLite): **behaviour** of the Kudde module;
@@ -53,9 +58,10 @@ References, copied from and never imported:
 | Tenancy | **One install, folder, `.env` and database per farm**, shared by all its modules | The database server refuses another farm's data: each farm's DB user has privileges on its own database only |
 | Field sign-in | Username or cell + 4-digit PIN | Simpler than printed QR pairing (§5) |
 | Pricing | R2 000 setup once; R150 pm hosting; R150 pm per paid module (Kudde first); Weather free | Owner's call, 24 October 2026 (§1.4) |
-| Pilot | Bekfontein: Weather first, then Kudde | Owner's call, 24 October 2026 |
-| Build order | Minimal core + Farm settings → Weather → Kudde → Werkers → Boord | Weather is free and needs least core; owner's call |
-| Eienaar | One farm only, never across farms | Keeps the one-database-per-farm rule with no exceptions |
+| Pilot | Bekfontein: Weather and Eienaar first, then Kudde | Owner's call, 24 and 25 October 2026 |
+| Build order | Minimal core + Farm settings → Weather → Eienaar (with Bekfontein going live, phase 3) → Kudde → Werkers → Boord | Weather is free and needs least core; Eienaar is the first module after installation; owner's call |
+| Eienaar | Free, on from `farm:create`, the first module after installation; a summary of the farm only, AI analytics in broad terms; one farm, never across farms | Owner's call, 25 October 2026: what every owner gets on day one; keeps the one-database-per-farm rule |
+| Span | Merged into Werkers | Owner's call, 24 October 2026: attendance and wage runs belong with the register and payroll |
 | Weather data | Open-Meteo's **free** API during development and marketing; the commercial API (a key in `.env`, no code change) before the first paying farm. Always called from the farm's server | Owner's call, 24 October 2026: no cost while nothing is sold (§2.3) |
 | Platform | Replaces the `plaashek-suite` architecture (TypeScript, Postgres, PowerSync, VPS, shared DB with `farm_id`) | ADR 0014 in `plaashek-suite` |
 
@@ -104,8 +110,9 @@ References, copied from and never imported:
 | Setup | R2 000 once per farm | Farm visit, `farm:create`, loading camps and animals, training |
 | Hosting | R150 per month per farm | Covers the Afrihost share, backups and the Weather data |
 | Kudde | R150 per month | First paid module |
-| Werkers | R150 per month | Second paid module, payroll included; Span and Boord's piece-work need it |
-| Each later module | R150 per month | Boord, Veldnotas, Stoor, Water, Bespuitings, Werkswinkel, Oudit, Span, Eienaar |
+| Werkers | R150 per month | Second paid module, payroll and Span's time and attendance included; Boord's piece-work needs it |
+| Each later module | R150 per month | Boord, Veldnotas, Stoor, Water, Bespuitings, Werkswinkel, Oudit |
+| Eienaar | Free | On for every farm from installation, no licence status, never switched off for non-payment |
 | Weather | Free | On for every farm, no licence status, never switched off for non-payment |
 
 So Bekfontein on Weather alone is R2 000 once and R150 per month (hosting); with Kudde, R300 per month. Year one is invoiced over WhatsApp and paid
@@ -303,7 +310,7 @@ unchanged in style) and its unit tests. Tick off here as built.
 
 **Later, if Bekfontein asks**
 - [ ] Rain gauge: the farm's own readings captured in the field, charted beside Open-Meteo's
-- [ ] Spray windows (wind, rain and temperature limits) for Bespuitings, and weather risk for Eienaar
+- [ ] Spray windows (wind, rain and temperature limits) for Bespuitings
 
 ### 2.4 Werkers module (`werkers`, R150 pm)
 
@@ -336,7 +343,16 @@ foreman who does has a field login (§5) linked to their worker record. Tick off
 - [ ] Scan in the field app: shows photo, preferred name, number, team and active, and the next of kin for an
   emergency. Never ID, bank or pay details on a phone. Works offline from the phone's cached register (number,
   names, team, active, photo thumbnail only)
-- [ ] The same scan is what Span (clock in/out) and Boord (piece-work at the scale) will use
+- [ ] The same scan is what clocking in and out (below) and Boord (piece-work at the scale) will use
+
+**Time and attendance** (Span, merged into Werkers 24 October 2026; scope from the suite's Span build scope)
+- [ ] Clock in and out by card scan on a team's phone, offline like every field capture; the office corrects a
+  missed scan with a reason, written to `audit_log`
+- [ ] Hours per worker and team per day and week, with overtime, Sunday and public holiday hours split out
+- [ ] Contractor crews: the contractor, its rate (per day, per hour or per unit) and who was in the crew each day;
+  the contractor is invoiced or paid outside payroll, its crew's hours are kept for the audit trail
+- [ ] A pay run takes the period's hours as its earnings lines (source `attendance`), the office still free to
+  change a line with a reason
 
 **Payroll exports and lists**
 - [ ] Register export and import: CSV keyed on worker number, **without** ID, bank or pay details. An import adds
@@ -350,8 +366,8 @@ foreman who does has a field login (§5) linked to their worker record. Tick off
 - [ ] Each worker is paid weekly, fortnightly or monthly. A **pay run** is one frequency and one period
   (e.g. week 3–9 March), with a pay date
 - [ ] A pay run opens with a line per active worker, pre-filled from their rate: a monthly worker's salary, an
-  hourly or daily worker's normal hours or days left for the office to type. Later Span (hours) and Boord
-  (piece-work kg) fill these lines themselves
+  hourly or daily worker's normal hours or days left for the office to type, unless attendance (below) has
+  them. Later Boord (piece-work kg) fills its lines itself
 - [ ] Earnings lines: normal hours or days, overtime (1.5×), Sunday (2×, or 1.5× for someone who normally works
   Sundays), public holiday (2×), leave days, piece-work units × rate, allowance, bonus. A monthly worker's hourly
   rate for overtime = monthly ÷ (weekly hours × 4.33)
@@ -417,11 +433,26 @@ pay run, so a harvest week needs no typing in payroll.
 ### 2.6 Later modules
 
 Rebuilt on the same core, in an order still to agree (§11), each starting from its `plaashek-suite` build scope:
-Veldnotas, Span (using Werkers and feeding its pay runs), Stoor, Water, Bespuitings, Werkswinkel, Oudit, Eienaar.
-Cross-module
+Veldnotas, Stoor, Water, Bespuitings, Werkswinkel, Oudit. Cross-module
 links the website promises (Bespuitings booking against Stoor stock and Water readings and the Weather data;
-Oudit drawing on Boord, Kudde and Stoor) are plain queries, because they share a database. Eienaar reads one
-farm only.
+Oudit drawing on Boord, Kudde and Stoor) are plain queries, because they share a database.
+
+### 2.7 Eienaar module (`eienaar`, free)
+
+The owner's summary of the farm. On for every farm from `farm:create`, so it is the first module a farm has after
+installation, before any paid module; like Weather it has no licence status and is never switched off. It reads
+one farm only (its own database). Tick off here as built.
+
+- [ ] A summary of what is happening on the farm: each enabled module contributes its own lines (as it gives its
+  Home tile), so Eienaar grows with the farm and never names a module itself. With only Weather on, it is the
+  weather summary; with Kudde, the herd's week as well
+- [ ] What needs attention, from the same contributions (for example a withdrawal ending, weighing due, frost
+  forecast)
+- [ ] AI analytics, in broad terms only: plain-language reading of the farm's own records and trends. Optional and
+  off until the owner switches it on; scope written before any code, and no promises of forecasts on the website
+  or in the order form until then
+- Not in it: activity, cost and yield across farms; crop forecasts; pack-out and throughput (those stay with the
+  modules that hold the records, Boord first)
 
 ---
 
@@ -503,7 +534,7 @@ prefixed with the module code.
 | `werkers_teams` | name, sort order, archived | |
 | `werkers_pay_runs` | frequency, period start and end, pay date, status (draft, finalised, paid), paid method and date | |
 | `werkers_payslips` | run, worker, gross, deductions, net, employer UIF, finalised copy of the worker's details | Frozen on finalise, so a later edit to the worker never changes a past payslip |
-| `werkers_payslip_lines` | payslip, kind, quantity, rate, amount (cents), source (manual, span, boord), override reason | |
+| `werkers_payslip_lines` | payslip, kind, quantity, rate, amount (cents), source (manual, attendance, boord), override reason | |
 | `werkers_loans` | worker, reason, amount, instalment, balance | |
 | `weer_responses` | query hash, endpoint, body (JSON), fetched at, expires at | The proxy's cache; a finished year never expires |
 
@@ -640,7 +671,7 @@ Same checks as BowlsBuddy, in CI on every push:
 | 0 | Skeleton from BowlsBuddy (Laravel 12, Filament 4, CI, session hook, build script, deploy doc); Afrihost package (Bronze Pro on `kregg.aserv.co.za`), farm subdomains' DNS pointed at it, landing page | Demo farm live at `demo.plaashek.co.za` over HTTPS (done 24 October 2026) | ½ week |
 | 1 | Minimal core: modules table and loading, `farm:create`, setup page, office login and roles, Farm settings, `af`/`en`, audit log | A farm can be created, its owner signs in and sets the farm's position | 1 week |
 | 2 | Weather: proxy and cache, `weather_days`, Weather Compare's screens at `/weer` and in the office, rain record, frost, PDF, offline | Bekfontein's forecast, rain record and a year-against-year chart, offline after first load | 1½ weeks |
-| 3 | Bekfontein live on Weather (free), `update-all.sh`, privacy text | Bekfontein uses it for a fortnight | ½ week + trial |
+| 3 | Bekfontein live on Weather and Eienaar (both free): Eienaar's summary from the modules' contributions and its attention list (§2.7, AI analytics later), `update-all.sh`, privacy text | Bekfontein's owner uses Eienaar and Weather for a fortnight | 1 week + trial |
 | 4 | Kudde domain: animals, events, calvings, derived herd state; Pest port of the old tests | Old Kudde's cases pass | 1½–2 weeks |
 | 4b | Livestock types: species in Settings with their rules, tags per species, births with several young, pig litters tagged at weaning, species in the field app and export | A farm with cattle and sheep captures both, each counted in its own classes | 1½ weeks |
 | 5 | Kudde office tab: dashboard, herd, animal page, corrections, export; licence commands | The office's whole day passes as a browser test | 1–1½ weeks |
@@ -651,7 +682,7 @@ Same checks as BowlsBuddy, in CI on every push:
 | 10 | Werkers payroll: settings, rate table, pay runs, UIF and PAYE, loans, payslips, bank and cash lists, SARS and UIF totals | One Bekfontein pay run done in Plaashek beside the manual book, matching to the cent, then a second without the book | 2½ weeks + one pay cycle |
 | 11 | Boord scope written (§2.5) | Scope agreed | ½ week |
 
-Roughly 16–18 weeks part-time with AI help, to Boord's scope. Werkers waits for Bekfontein to be live on Kudde +
+Roughly 16½–18½ weeks part-time with AI help, to Boord's scope. Werkers waits for Bekfontein to be live on Kudde +
 Weather (§1.3). Bekfontein pays R150 per month (hosting) on Weather alone, R300 with Kudde, R450 with Werkers.
 
 ---
@@ -659,7 +690,7 @@ Weather (§1.3). Bekfontein pays R150 per month (hosting) on Weather alone, R300
 ## 11. Open questions
 
 Answered 24 October 2026: pilot is **Bekfontein**; the Afrihost package goes on the **same ClientZone login** as
-BowlsBuddy; **pricing** in §1.4; **herds and breeding go into Kudde v1** (§2.2); **one Eienaar per farm**; the
+BowlsBuddy; **pricing** in §1.4; **herds and breeding go into Kudde v1** (§2.2); **Span merged into Werkers**; **Eienaar free, a summary of the farm, on from installation** (25 October); the
 website's privacy wording is noted for rewording; Bekfontein pays **by hand**, so Werkers gets a simple payroll;
 cards stay **Boord's 58 × 78 mm**; **Boord** is the next module after Werkers.
 
@@ -672,7 +703,9 @@ Still open:
 4. **Website changes** before the first paying farm:
    a. Privacy: replace "your data never leaves the farm … nothing is … shared with a third party" with wording
       true of hosted data and AI (stored in South Africa, belongs to the farm, never sold).
-   b. Eienaar: drop "across farms".
-   c. Add the Weather module, free with every farm, and the prices if they are to be public.
+   b. Remove Span; Werkers (with time and attendance) takes its place. Eienaar: free, a summary of what is
+      happening on the farm with AI analytics in broad terms; drop "across farms", crop forecasts and pack-out
+      trends.
+   c. Add the Weather module, free with every farm like Eienaar, and the prices if they are to be public.
 5. **Open-Meteo plan:** the free API until the first paying farm (decided). Then buy the commercial plan, set
    `OPEN_METEO_API_KEY` on every farm, and check its price is carried by the hosting fee.
