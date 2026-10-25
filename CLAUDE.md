@@ -155,4 +155,9 @@ vendor/bin/pint --test
 vendor/bin/phpstan analyse --memory-limit=1G --no-progress
 vendor/bin/pest
 npm test
+npm run e2e   # the office's day in Chromium (tests/e2e, seeded by OfficeDaySeeder into plaashek_e2e)
 ```
+
+The browser test serves a fresh farm with `scripts/e2e-serve.sh` (environment overrides `.env`, so only
+`plaashek_e2e` is wiped) and drives it with the sandbox's Playwright (`require('playwright')`, never installed
+again); CI installs the same version. A failed step leaves a screenshot in `test-results/`.

@@ -47,6 +47,8 @@ php "$ROOT/scripts/strip-export-ignored.php" "$STAGE/vendor"
 
 # Not needed on the server.
 rm -rf "$STAGE"/{tests,.github,.claude,docs,scripts,phpunit.xml,phpstan.neon,.env.example,.editorconfig,.gitattributes,package.json}
+# The browser test's farm: never on a real one.
+rm -f "$STAGE/database/seeders/OfficeDaySeeder.php"
 
 # Every autoloaded class file must still be there after stripping.
 (cd "$STAGE" && php -r '

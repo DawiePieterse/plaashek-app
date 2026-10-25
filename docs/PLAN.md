@@ -639,6 +639,8 @@ No cross-farm console. Instead:
 Same checks as BowlsBuddy, in CI on every push:
 
 - Pint, Larastan level 6, Pest (MariaDB), `composer audit`
+- Office browser test (built): the office's day in Chromium at desktop and phone widths, `npm run e2e`, its own CI
+  job
 - Playwright at phone and desktop widths: sign in a phone, switch user offline, capture offline, come back
   online, sync, check the office sees it
 - **Isolation test:** two farm databases; a device token, session, PIN or photo URL from farm A gets nothing from
@@ -687,7 +689,7 @@ Same checks as BowlsBuddy, in CI on every push:
 | 3 | **Deferred until the other modules are done (§2.7).** Bekfontein live on Weather and Eienaar (both free): Eienaar's summary from the modules' contributions and its attention list (§2.7, AI analytics later), `update-all.sh`, privacy text | Bekfontein's owner uses Eienaar and Weather for a fortnight | 1 week + trial |
 | 4 | Kudde domain: animals, events, calvings, derived herd state; Pest port of the old tests | Old Kudde's cases pass | 1½–2 weeks |
 | 4b | Livestock types: species in Settings with their rules, tags per species, births with several young, pig litters tagged at weaning, species in the field app and export | A farm with cattle and sheep captures both, each counted in its own classes | 1½ weeks |
-| 5 | Kudde office tab: dashboard, herd, animal page, corrections, export; licence commands | The office's whole day passes as a browser test | 1–1½ weeks |
+| 5 | Kudde office tab: dashboard, herd, animal page, corrections, export; licence commands | The office's whole day passes as a browser test (`tests/e2e/office.e2e.js`, built 25 October 2026) | 1–1½ weeks |
 | 6 | Field: field-user sign-in, PIN switch offline, devices page, PWA shell and home tiles (Weather moves in), outbox, disable, 21-day window, Kudde screens | Offline capture → sync → office sees it, in Playwright | 2 weeks |
 | 7 | Photos, herds and breeding, lineage (pedigree, offspring, sire suggestion, inbreeding warning), backups, importer | A farm-PC Kudde imports cleanly | 1½ weeks |
 | 8 | Bekfontein live on Kudde, order-form text | One real farm live on Kudde for a month | ½ week + trial |
