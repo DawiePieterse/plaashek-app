@@ -13,7 +13,8 @@ Farm software as modules per farm, rebuilt on the BowlsBuddy model (`DawiePieter
   and `lang/`, and adds office pages through `filamentPages()`. Module tables are prefixed with its code.
 - **Every module's tables exist in every farm**, on or off. Switching a module on only shows it. Routes use the
   `module:<code>` middleware; Filament pages hide themselves in `canAccess()`.
-- **Module codes are the Afrikaans names:** `weer`, `kudde`, `werkers`. Free modules (`weer`) are always on.
+- **Module codes are the Afrikaans names:** `weer`, `eienaar`, `kudde`, `werkers`. Free modules (`weer`,
+  `eienaar`) are always on, have no licence status and are never switched off for non-payment.
 - **Settings go through `App\Support\Settings`; the farm's own settings through `App\Support\Farm`.**
 - **Screens speak the farm's language** (`af`/`en`, `Farm::LANGUAGE`, applied by `SetFarmLocale`). English in
   the database and code. Core strings in `lang/{af,en}/plaashek.php`, a module's in its own `lang/`.
@@ -67,12 +68,23 @@ Farm software as modules per farm, rebuilt on the BowlsBuddy model (`DawiePieter
 ## Workers (core)
 
 - `workers` (`App\Models\Worker`) is the minimal register under Farm settings: number, names, cell, photo,
-  active. Workers are never deleted, only made inactive; changes write `AuditLog`. Payroll and identity belong
-  to the Werkers module's own tables.
+  active. Workers are never deleted, only made inactive; changes write `AuditLog`. Payroll, identity and time
+  and attendance (Span, merged into Werkers) belong to the Werkers module's own tables.
 - The card's QR holds the number only (`App\Support\WorkerCard`, SVG from `chillerlan/php-qrcode`, ECC H), the
   same as Boord's badges, so Bekfontein's printed cards keep working. Sheet at `/workers/cards?ids=`.
 - Photos live on the private `local` disk (`serve` on, so the office shows them by signed URL only).
 - `App\Support\NaturalOrder` sorts tags and numbers the way they are read (B2 before B10).
+
+## Eienaar module (planned: PLAN.md §2.7, phase 3 with Weather)
+
+- Free, on from `farm:create`: the first module a farm has after installation. The owner's summary of what is
+  happening on the farm, plus a "needs attention" list (withdrawal ending, weighing due, frost forecast).
+- Each enabled module contributes its own lines, the way it gives its Home tile; Eienaar never names a module.
+  With only Weather on, it is the weather summary.
+- One farm only (its own database), never across farms. No cost, yield, pack-out or crop-forecast figures: those
+  stay with the modules that hold the records.
+- AI analytics in broad terms only, optional and off until the owner switches it on; its scope is written in
+  PLAN.md before any code, and the website and order form promise nothing more specific until then.
 
 ## Kudde module
 
