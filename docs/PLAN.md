@@ -107,7 +107,7 @@ References, copied from and never imported:
 
 | Item | Price | Notes |
 |---|---|---|
-| Setup | R2 000 once per farm | Farm visit, `farm:create`, loading camps and animals, training |
+| Setup | R2 000 once per farm | `farm:create`, loading camps and animals, remote training. No farm visit: one on request is charged at the hourly rate for time at the farm, plus travel at AA km rates or actual cost (flights, car hire, accommodation) |
 | Hosting | R150 per month per farm | Covers the Afrihost share, backups and the Weather data |
 | Kudde | R150 per month | First paid module |
 | Werkers | R150 per month | Second paid module, payroll and Span's time and attendance included; Boord's piece-work needs it |
