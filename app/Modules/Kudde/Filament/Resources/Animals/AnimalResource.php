@@ -9,6 +9,7 @@ use App\Modules\Kudde\Models\Animal;
 use App\Modules\Kudde\Models\Species;
 use App\Modules\Kudde\Support\HerdState;
 use App\Modules\Kudde\Support\Lineage;
+use App\Modules\Kudde\Support\Tags;
 use App\Modules\ModuleRegistry;
 use App\Support\CampNames;
 use BackedEnum;
@@ -121,14 +122,19 @@ class AnimalResource extends Resource
                 TextColumn::make('herd_class')->label(__('kudde::ui.columns.class'))
                     ->state(fn (Animal $a) => ucfirst(self::state()->classOf($a))),
                 TextColumn::make('camp')->label(__('kudde::ui.columns.camp'))
-                    ->state(fn (Animal $a) => self::state()->locations[$a->id] ?? null),
+                    ->state(fn (Animal $a) => self::state()->locations[$a->id] ?? null)
+                    ->sortable(query: fn (Builder $query, string $direction) => self::byDerived($query, $direction, self::campRanks())),
                 TextColumn::make('last_weight')->label(__('kudde::ui.columns.last_weight'))
                     ->state(fn (Animal $a) => self::state()->weights[$a->id][0] ?? null)->numeric(1)
+                    ->sortable(query: fn (Builder $query, string $direction) => self::byDerived($query, $direction,
+                        array_map(fn (array $w) => $w[0], self::state()->weights)))
                     ->description(fn (Animal $a) => isset(self::state()->weights[$a->id]) ? self::state()->weights[$a->id][1]->format('Y-m-d') : null)
                     // Amber when its species' "weigh every" has passed, so the crush list can be read off the screen.
                     ->color(fn (Animal $a) => self::state()->needsWeighing($a) ? 'warning' : null),
                 TextColumn::make('withdrawal_until')->label(__('kudde::ui.columns.withdrawal_until'))
-                    ->state(fn (Animal $a) => self::state()->withdrawal[$a->id] ?? null)->date('Y-m-d')->badge()->color('danger'),
+                    ->state(fn (Animal $a) => self::state()->withdrawal[$a->id] ?? null)->date('Y-m-d')->badge()->color('danger')
+                    ->sortable(query: fn (Builder $query, string $direction) => self::byDerived($query, $direction,
+                        array_map(fn ($until) => $until->getTimestamp(), self::state()->withdrawal))),
                 TextColumn::make('birth_date')->label(__('kudde::ui.columns.birth_date'))->date('Y-m-d')->sortable()->toggleable(),
                 TextColumn::make('status')->label(__('kudde::ui.columns.status'))->badge()
                     ->formatStateUsing(fn (string $state) => __('kudde::ui.status.'.$state))
@@ -168,6 +174,50 @@ class AnimalResource extends Resource
     private static function idsWhere(callable $matches): array
     {
         return self::state()->animals->filter($matches)->pluck('id')->values()->all();
+    }
+
+    /**
+     * Sorts by a derived value (HerdState's, not a column): the ids in the value's order, tags as read breaking ties,
+     * handed to SQL with FIELD(). Animals without a value (never weighed, no camp, not in withdrawal) come last
+     * whichever way the column is sorted: they are not the ones the farmer is looking for.
+     *
+     * @param  Builder<Animal>  $query
+     * @param  array<int, int|float>  $values  per animal id, only those that have one
+     * @return Builder<Animal>
+     */
+    private static function byDerived(Builder $query, string $direction, array $values): Builder
+    {
+        if ($values === []) {
+            return self::byTag($query, 'asc');
+        }
+        $tags = self::state()->animals->pluck('tag', 'id');
+        $sign = $direction === 'desc' ? -1 : 1;
+        $ids = array_keys($values);
+        usort($ids, fn (int $a, int $b) => $sign * ($values[$a] <=> $values[$b]) ?: Tags::compare($tags[$a] ?? '', $tags[$b] ?? ''));
+        $list = implode(',', $ids);
+
+        return self::byTag($query->orderByRaw("FIELD(id, {$list}) = 0")->orderByRaw("FIELD(id, {$list})"), 'asc');
+    }
+
+    /**
+     * Each placed animal's camp as a rank: the farm's order of its camps, then camps only the history knows, in tag
+     * order. The farm walks its camps in its own order, not the alphabet's.
+     *
+     * @return array<int, int>
+     */
+    private static function campRanks(): array
+    {
+        $order = [];
+        foreach (Camp::query()->inFarmOrder()->pluck('name') as $name) {
+            $order[CampNames::fold($name)] ??= count($order);
+        }
+        $stray = collect(self::state()->locations)->map(fn (string $c) => CampNames::fold($c))
+            ->reject(fn (string $c) => isset($order[$c]))->unique()->sort(fn ($a, $b) => Tags::compare($a, $b))->values();
+        foreach ($stray as $camp) {
+            $order[$camp] = count($order);
+        }
+
+        return array_map(fn (string $c) => $order[CampNames::fold($c)], array_filter(self::state()->locations, fn ($c) => $c !== ''));
     }
 
     /**
