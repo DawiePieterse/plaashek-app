@@ -8,6 +8,7 @@ use App\Modules\Kudde\Filament\Resources\Animals\Pages\ListAnimals;
 use App\Modules\Kudde\Filament\Resources\Animals\Pages\ViewAnimal;
 use App\Modules\Kudde\Filament\Resources\Animals\RelationManagers\EventsRelationManager;
 use App\Modules\Kudde\Filament\Resources\Animals\RelationManagers\PhotosRelationManager;
+use App\Modules\Kudde\KuddeModule;
 use App\Modules\Kudde\Models\Animal;
 use App\Modules\Kudde\Models\Species;
 use App\Modules\Kudde\Support\HerdState;
@@ -281,7 +282,8 @@ class AnimalResource extends Resource
     {
         $user = auth()->user();
 
-        return $user instanceof User && in_array($user->role, [User::OWNER, User::MANAGER, User::STAFF], true);
+        return $user instanceof User && in_array($user->role, [User::OWNER, User::MANAGER, User::STAFF], true)
+            && KuddeModule::writable();
     }
 
     public static function getPages(): array

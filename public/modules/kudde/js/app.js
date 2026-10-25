@@ -1518,6 +1518,10 @@ async function trySync() {
           // 401 is the phone's sign-in, not the entry: keep everything
           // queued until a card is scanned again (signin.js shows the screen).
           if (status === 401) break;
+          // 423 is the farm's Kudde being read-only for now: every entry would
+          // get the same answer, and each is a real capture that may be saved
+          // once it is writable again. Keep them all queued.
+          if (status === 423) break;
           // A 5xx is the server's own trouble and may well pass (a restart,
           // a locked database). Leave it queued for the next pass, but move
           // on so it doesn't hold up every entry behind it.

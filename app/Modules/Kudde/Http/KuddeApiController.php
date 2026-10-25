@@ -7,6 +7,7 @@ use App\Models\AuditLog;
 use App\Models\Camp;
 use App\Models\User;
 use App\Models\Worker;
+use App\Modules\Kudde\KuddeModule;
 use App\Modules\Kudde\Models\Animal;
 use App\Modules\Kudde\Models\AnimalEvent;
 use App\Modules\Kudde\Models\Litter;
@@ -558,6 +559,11 @@ class KuddeApiController extends Controller
     /** Office viewers read only. A signed-in worker captures: that is what the field app is for. */
     private function mayWrite(Request $request): void
     {
+        // A suspended licence, or a grace period run out: the herd is read-only, for the office and the phones
+        // alike. 423, so the phone keeps the record in its outbox rather than dropping it as refused.
+        if (! KuddeModule::writable()) {
+            throw new HerdException(__('kudde::ui.read_only'), 423);
+        }
         if (FieldSession::worker($request) !== null) {
             return;
         }

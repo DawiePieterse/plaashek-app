@@ -95,6 +95,17 @@ return [
         'online' => 'Online',
         'offline' => 'Offline',
     ],
+    'licences' => [
+        'title' => 'Licences',
+        'hint' => 'Paid modules and their licence. Plaashek updates these when a payment is received.',
+        'active' => 'active',
+        'grace' => 'payment due',
+        'suspended' => 'suspended',
+        'cancelled' => 'cancelled',
+        'read_only' => 'read-only: records can be seen and exported, nothing new is saved',
+        'since' => 'since :date',
+        'grace_until' => 'saving until :date',
+    ],
     'modules' => [
         'weer' => 'Weather',
         'kudde' => 'Kudde',

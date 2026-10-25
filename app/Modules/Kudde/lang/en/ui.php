@@ -2,6 +2,8 @@
 
 // Kudde's messages, shown on the phones and in the office in the farm's language.
 return [
+    'read_only' => 'Kudde is read-only for now: nothing new can be saved. Ask the office.',
+    'read_only_office' => 'Kudde is read-only: its licence is suspended or its payment is overdue. Everything can be seen and exported; nothing new is saved, from the office or the phones.',
     'ambiguous_tag' => 'More than one species has an animal tagged :tag: say which species',
     'choose_species' => 'Choose the species',
     'no_animal' => 'No animal with tag :tag',

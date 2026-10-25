@@ -150,8 +150,8 @@ on Bronze Pro), and the Open-Meteo commercial plan from the first paying farm (c
 - [x] Audit log of settings changes and staff access
 
 **Built with Kudde**
-- [ ] Settings: licence status and dates
-- [ ] Modules switched on per farm (`farm:modules`), each with its own licence status
+- [x] Settings: licence status and dates (Farm settings, shown not edited: Plaashek sets them)
+- [x] Modules switched on per farm (`farm:modules`), each with its own licence status (`farm:licence`)
 - [ ] One office tab per enabled module, plus the Settings group (§5)
 - [ ] Field users with username/cell + PIN, the devices page, disable a person or a phone (§5)
 - [ ] Field PWA shell: sign-in, change user, home screen with one tile per enabled module, the outbox and sync (§7)
@@ -603,8 +603,11 @@ No cross-farm console. Instead:
 - `php artisan farm:create`: asks farm name, language, owner email, GPS and modules; creates the owner, staff
   account and settings. A first-run setup page asks the same when there is no terminal (BowlsBuddy has both).
 - `php artisan farm:modules kudde,boord`: switch paid modules on or off (`weer` is always on).
-- `php artisan farm:licence <module> active|grace|suspended|cancelled`: grace keeps capturing 14 days, then
-  read-only.
+- `php artisan farm:licence <module> active|grace|suspended|cancelled` (built, owner's call 25 October 2026):
+  grace keeps capturing 14 days from when it is first set, then read-only; suspended is read-only (seen and
+  exported, nothing new saved, office or phone: a 423 the phone's outbox keeps queued); cancelled switches the
+  module off, its records kept. `farm:modules` starts a module it switches on as active and cancels one it
+  switches off. Free modules have no licence.
 - `scripts/build-afrihost.sh`: `plaashek.zip` (with `vendor/`) and, with `--install-sql`, `install.sql`.
 - `scripts/update-all.sh` (built, 24 October 2026): run every minute by a cPanel cron job, because the account
   has no shell. Upload the zip to `~/plaashek-release/` and it updates each farm, demo first: maintenance page,

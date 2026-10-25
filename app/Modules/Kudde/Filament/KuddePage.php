@@ -42,6 +42,12 @@ class KuddePage extends Page
         return 'Kudde';
     }
 
+    /** Said once at the top while the herd is read-only, so the office knows why nothing can be corrected. */
+    public function getSubheading(): ?string
+    {
+        return KuddeModule::writable() ? null : __('kudde::ui.read_only_office');
+    }
+
     public static function canAccess(): bool
     {
         return auth()->check() && app(ModuleRegistry::class)->isEnabled('kudde');

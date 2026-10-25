@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Console\Commands\FarmCreate;
+use App\Console\Commands\FarmLicence;
 use App\Console\Commands\FarmModules;
 use App\Console\Commands\FarmStaffPassword;
 use App\Modules\ModuleRegistry;
@@ -42,7 +43,7 @@ class AppServiceProvider extends ServiceProvider
         Password::defaults(fn () => Password::min(8));
 
         if ($this->app->runningInConsole()) {
-            $this->commands([FarmCreate::class, FarmModules::class, FarmStaffPassword::class]);
+            $this->commands([FarmCreate::class, FarmLicence::class, FarmModules::class, FarmStaffPassword::class]);
         }
     }
 }

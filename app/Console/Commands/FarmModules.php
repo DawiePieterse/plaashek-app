@@ -32,7 +32,9 @@ class FarmModules extends Command
         AuditLog::record('modules.changed', implode(',', $codes));
 
         foreach ($modules->all() as $module) {
-            $this->line(sprintf('%-10s %s', $module::code(), $modules->isEnabled($module::code()) ? 'on' : 'off'));
+            $code = $module::code();
+            $licence = $modules->licence($code)?->licence;
+            $this->line(sprintf('%-10s %-4s %s', $code, $modules->isEnabled($code) ? 'on' : 'off', $module::free() ? 'free' : ($licence ?? '')));
         }
 
         return self::SUCCESS;
