@@ -55,7 +55,6 @@ Route::middleware([SetFarmLocale::class, 'module:kudde', 'throttle:600,1'])->pre
         Route::get('/animals', [Api::class, 'animals'])->name('animals');
         Route::post('/animals', [Api::class, 'storeAnimal'])->name('animals.store');
         Route::get('/animals/{tag}/events', [Api::class, 'animalEvents'])->name('animal.events');
-        Route::get('/animals/{tag}/lineage', [Api::class, 'lineage'])->name('animal.lineage');
         Route::post('/events', [Api::class, 'storeEvent'])->name('events.store');
         Route::post('/events/movement/bulk', [Api::class, 'moveAnimals'])->name('events.move');
         Route::post('/events/treatment/bulk', [Api::class, 'treatAnimals'])->name('events.treat');

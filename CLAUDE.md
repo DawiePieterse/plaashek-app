@@ -50,7 +50,7 @@ Farm software as modules per farm, rebuilt on the BowlsBuddy model (`DawiePieter
   release.
 - The panel's Tailwind build has only Filament's classes: our views use the plain CSS in
   `resources/views/filament/styles.blade.php` or inline styles, not Tailwind utilities.
-- A module adds Filament resources with `Module::filamentResources()` (Kudde: the camps and the species).
+- A module adds Filament resources with `Module::filamentResources()` (Kudde: the animals, the camps and the species).
 
 ## Weather module
 
@@ -111,7 +111,11 @@ Farm software as modules per farm, rebuilt on the BowlsBuddy model (`DawiePieter
   with her as dam and the litter's date as birth date. The field API has no route-model binding: look ids up.
 - Lineage (`Support\Lineage`, `GET /animals/{tag}/lineage`): parents to great-grandparents found by tag within the
   species (the latest animal with that tag born before the young one), offspring, a mother's births (tagged young
-  by date plus litters) with the interval between them. Shown in the field app's animal sheet ("Family").
+  by date plus litters) with the interval between them. Shown on the office animal page only, not in the field app
+  (owner's call).
+- Office herd: `Filament\Resources\Animals` (under Kudde in the menu, read only): the list (alive by default, tags
+  sorted as read in SQL, `AnimalResource::byTag`) and a page per animal: record, family, history. The derived herd
+  is loaded once per request (`AnimalResource::state()`). Filament injects closure parameters by name: `$query`.
 - Weather comes from `weather_days` through `App\Modules\Weer\WeatherDays`, never a live call;
   `kudde:weather` (05:25) stamps events saved before their day was filled.
 - API at `/kudde/api/*` behind the office login; a viewer only reads. The same methods at

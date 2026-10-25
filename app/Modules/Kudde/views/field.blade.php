@@ -225,10 +225,6 @@
     <input id="photoInput" type="file" accept="image/*" capture="environment" class="hidden">
     </div>
 
-    <!-- Family: parents to great-grandparents, offspring, and a mother's births with the days between them.
-         Tap an animal on record to open it. -->
-    <div id="detailFamily" class="mb-3"></div>
-
     <div class="text-sm font-semibold text-slate-500 mb-2">History</div>
     <div id="detailEvents" class="space-y-1 text-sm max-h-56 overflow-y-auto"></div>
   </div>

@@ -142,6 +142,7 @@ class Lineage
         [$kg] = $this->state->weights[$a->id] ?? [null];
 
         return [
+            'id' => $a->id,
             'tag' => $a->tag,
             'name' => $a->name,
             'sex' => $a->sex,

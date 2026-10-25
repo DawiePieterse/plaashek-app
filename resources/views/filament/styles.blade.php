@@ -41,4 +41,16 @@
     .plaashek-muted { opacity: .65; }
     /* With FarmChart's maintainAspectRatio off, the chart fills this: one height for every chart card. */
     .fi-wi-chart-canvas-ctn { position: relative; height: 18rem; }
+    /* Kudde's animal page: the pedigree and the family lists. */
+    .plaashek-muted { opacity: .65; }
+    .plaashek-link:hover { text-decoration: underline; }
+    .plaashek-pedigree { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(8, auto);
+        gap: .35rem; align-items: center; }
+    .plaashek-ped { display: flex; flex-direction: column; padding: .35rem .6rem; border-radius: .5rem; font-size: .875rem;
+        background: rgb(127 127 127 / .1); min-width: 0; }
+    .plaashek-ped span { font-size: .75rem; opacity: .7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    a.plaashek-ped:hover { background: rgb(127 127 127 / .2); }
+    .plaashek-ped-off { opacity: .6; }
+    .plaashek-ped-empty { border: 1px dashed rgb(127 127 127 / .3); background: none; opacity: .5; font-size: .75rem; }
+    .plaashek-family-h { font-weight: 600; font-size: .875rem; margin: 1.25rem 0 .35rem; }
 </style>
