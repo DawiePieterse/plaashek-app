@@ -81,6 +81,14 @@ return [
         'weights' => 'Gemiddelde gewig van diere wat geweeg is',
         'avg_kg' => 'Gemiddelde kg',
     ],
+    'herd' => [
+        'title' => 'Kuddelys',
+        'animal' => 'dier',
+        'search' => 'Oorplaatjie, naam, ras, moer of vaar',
+        'empty' => 'Geen diere hier nie',
+        'in_withdrawal' => 'In onttrekking',
+        'needs_weighing' => 'Moet geweeg word',
+    ],
     'lists' => [
         'withdrawal' => 'In onttrekking',
         'until' => 'tot :date',

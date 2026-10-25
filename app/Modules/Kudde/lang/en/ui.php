@@ -81,6 +81,14 @@ return [
         'weights' => 'Average weight of animals weighed',
         'avg_kg' => 'Average kg',
     ],
+    'herd' => [
+        'title' => 'Herd list',
+        'animal' => 'animal',
+        'search' => 'Tag, name, breed, dam or sire',
+        'empty' => 'No animals here',
+        'in_withdrawal' => 'In withdrawal',
+        'needs_weighing' => 'Needs weighing',
+    ],
     'lists' => [
         'withdrawal' => 'In withdrawal',
         'until' => 'until :date',

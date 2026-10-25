@@ -38,7 +38,8 @@ Farm software as modules per farm, rebuilt on the BowlsBuddy model (`DawiePieter
   (owner only, hidden while the module is off, saves through `Settings` and the audit log).
 - **Each module has a screen** (its menu entry and Home tile): KPI cards (`StatsOverviewWidget`), charts on
   `App\Filament\Widgets\FarmChart` (fixed height, Filament's own Chart.js, no CDN), short lists, and the
-  **Reports** button (`App\Filament\Actions\ReportsAction`). Kudde: `Filament\KuddePage`; Weather:
+  **Reports** button (`App\Filament\Actions\ReportsAction`). Kudde: `Filament\KuddePage`, with the herd list `Filament\HerdPage` under it (a
+  page with a table built from `HerdState` rows, searched and sorted in PHP: resource lists take Eloquent rows only); Weather:
   `Filament\WeatherPage` (its record from `weather_days`, a button into `/weer` and one to backfill history);
   Workers: stats and reports on the list.
 - **Reports** (`app/Reports`): a `Report` gives its key, label, own filters, columns and rows; the action adds

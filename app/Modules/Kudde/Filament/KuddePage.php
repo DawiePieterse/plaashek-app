@@ -49,6 +49,8 @@ class KuddePage extends Page
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('herd')->label(__('kudde::ui.herd.title'))->icon(Heroicon::OutlinedQueueList)
+                ->url(HerdPage::getUrl()),
             ReportsAction::make(KuddeModule::reports()),
             Action::make('field')->label(__('kudde::ui.open_field_app'))->icon(Heroicon::OutlinedDevicePhoneMobile)
                 ->url(route('kudde.field'))->openUrlInNewTab(),

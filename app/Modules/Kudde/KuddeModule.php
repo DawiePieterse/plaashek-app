@@ -3,6 +3,7 @@
 namespace App\Modules\Kudde;
 
 use App\Modules\Kudde\Console\StampWeather;
+use App\Modules\Kudde\Filament\HerdPage;
 use App\Modules\Kudde\Filament\KuddePage;
 use App\Modules\Kudde\Filament\KuddeSettingsPage;
 use App\Modules\Kudde\Filament\Resources\Camps\CampResource;
@@ -44,7 +45,7 @@ class KuddeModule extends Module
 
     public static function filamentPages(): array
     {
-        return [KuddePage::class, KuddeSettingsPage::class];
+        return [KuddePage::class, HerdPage::class, KuddeSettingsPage::class];
     }
 
     /** Alive animals: the number a farmer keeps in their head and checks first. */
