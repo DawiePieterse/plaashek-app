@@ -55,3 +55,54 @@ jobs:
 
       - name: Security advisories
         run: composer audit
+
+  # The office's whole day in a real browser (tests/e2e, PLAN.md phase 5), against a fresh seeded farm.
+  office-e2e:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: plaashek_e2e
+          MYSQL_USER: pk
+          MYSQL_PASSWORD: pk
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: intl, mbstring, pcntl, pdo_mysql, posix, zip, gd
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Prepare environment
+        run: cp .env.example .env && php artisan key:generate
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # The same Playwright as Claude's sandbox has, not saved to package.json: the repo has no Node build.
+      - name: Install Playwright and Chromium
+        run: npm install --no-save playwright@1.63.0 && npx playwright install --with-deps chromium
+
+      - name: Office browser test
+        run: npm run e2e
+
+      - name: Screenshots of a failed step
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: office-e2e-screenshots
+          path: test-results/

@@ -4,6 +4,7 @@
   "type": "module",
   "description": "Plaashek's browser code tests. No build step: the code is served as it is.",
   "scripts": {
-    "test": "node --test tests/js/*.test.js"
+    "test": "node --test tests/js/*.test.js",
+    "e2e": "node --test --test-concurrency=1 tests/e2e/*.e2e.js"
   }
 }
