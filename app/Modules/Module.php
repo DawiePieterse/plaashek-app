@@ -20,6 +20,12 @@ abstract class Module extends ServiceProvider
     abstract public static function nameKey(): string;
 
     /** A free module is on for every farm and is never switched off for non-payment. */
+    /** Whether the module may save new records today (its licence: ModuleRegistry::isWritable). */
+    public static function writable(): bool
+    {
+        return app(ModuleRegistry::class)->isWritable(static::code());
+    }
+
     public static function free(): bool
     {
         return false;

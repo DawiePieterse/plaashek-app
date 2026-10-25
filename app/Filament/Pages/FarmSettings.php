@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Models\AuditLog;
 use App\Models\User;
+use App\Modules\ModuleRegistry;
 use App\Support\Farm;
 use App\Support\Settings;
 use BackedEnum;
@@ -110,7 +111,37 @@ class FarmSettings extends Page
                     // A phone standing on the farm knows where it is; that beats looking up coordinates.
                     View::make('filament.pages.partials.use-my-location'),
                 ]),
+            // Shown, not edited: Plaashek sets a licence by hand once the EFT shows (farm:licence, ADR 0004).
+            Section::make(__('plaashek.licences.title'))->description(__('plaashek.licences.hint'))
+                ->visible(fn () => self::licences() !== [])
+                ->schema([View::make('filament.pages.partials.licences')->viewData(fn () => ['licences' => self::licences()])]),
         ])->statePath('data');
+    }
+
+    /**
+     * The farm's paid modules with their licence: status, since when, grace until, and whether it saves today.
+     *
+     * @return list<array{name: string, status: string, since: string|null, grace_until: string|null, writable: bool}>
+     */
+    public static function licences(): array
+    {
+        $registry = app(ModuleRegistry::class);
+        $rows = [];
+        foreach ($registry->all() as $module) {
+            $licence = $registry->licence($module::code());
+            if ($module::free() || $licence === null || $licence->licence === null) {
+                continue;
+            }
+            $rows[] = [
+                'name' => __($module::nameKey()),
+                'status' => __('plaashek.licences.'.$licence->licence),
+                'since' => $licence->licence_since?->toDateString(),
+                'grace_until' => $licence->grace_until?->toDateString(),
+                'writable' => $registry->isWritable($module::code()),
+            ];
+        }
+
+        return $rows;
     }
 
     public function save(Settings $settings): void

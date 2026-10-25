@@ -15,6 +15,10 @@ Farm software as modules per farm, rebuilt on the BowlsBuddy model (`DawiePieter
   `module:<code>` middleware; Filament pages hide themselves in `canAccess()`.
 - **Module codes are the Afrikaans names:** `weer`, `eienaar`, `kudde`, `werkers`. Free modules (`weer`,
   `eienaar`) are always on, have no licence status and are never switched off for non-payment.
+- **A paid module's licence** (`modules.licence`: active, grace, suspended, cancelled; `farm:licence`) decides
+  whether it saves: `ModuleRegistry::isWritable()`, or `Module::writable()` in the module. Every write path checks
+  it (Kudde: the API's `mayWrite`, 423 when read-only; `AnimalResource::mayCorrect`, camps). Settings stay
+  editable; suspended still reads and exports; cancelled is off. Never mention the licence on a phone.
 - **Settings go through `App\Support\Settings`; the farm's own settings through `App\Support\Farm`.**
 - **Screens speak the farm's language** (`af`/`en`, `Farm::LANGUAGE`, applied by `SetFarmLocale`). English in
   the database and code. Core strings in `lang/{af,en}/plaashek.php`, a module's in its own `lang/`.

@@ -6,6 +6,7 @@ use App\Models\AuditLog;
 use App\Models\Camp;
 use App\Models\User;
 use App\Modules\Kudde\Filament\Resources\Camps\Pages\ListCamps;
+use App\Modules\Kudde\KuddeModule;
 use App\Modules\Kudde\Support\HerdState;
 use App\Modules\ModuleRegistry;
 use App\Support\CampNames;
@@ -168,6 +169,7 @@ class CampResource extends Resource
     {
         $user = auth()->user();
 
-        return $user instanceof User && in_array($user->role, [User::OWNER, User::MANAGER, User::STAFF], true);
+        return $user instanceof User && in_array($user->role, [User::OWNER, User::MANAGER, User::STAFF], true)
+            && KuddeModule::writable();
     }
 }

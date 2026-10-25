@@ -2,6 +2,8 @@
 
 // Kudde se boodskappe, op die fone en in die kantoor in die plaas se taal.
 return [
+    'read_only' => 'Kudde is tans net om te lees: niks nuuts kan gestoor word nie. Vra die kantoor.',
+    'read_only_office' => 'Kudde is net om te lees: sy lisensie is opgeskort of sy betaling is agterstallig. Alles kan gesien en uitgevoer word; niks nuuts word gestoor nie, van die kantoor of die fone.',
     'ambiguous_tag' => "Meer as een soort het 'n dier met oorplaatjie :tag: sê watter soort",
     'choose_species' => 'Kies die soort',
     'no_animal' => 'Geen dier met oorplaatjie :tag nie',

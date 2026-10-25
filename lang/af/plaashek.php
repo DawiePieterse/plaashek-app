@@ -95,6 +95,17 @@ return [
         'online' => 'Aanlyn',
         'offline' => 'Vanlyn',
     ],
+    'licences' => [
+        'title' => 'Lisensies',
+        'hint' => 'Betaalde modules en hul lisensie. Plaashek werk dit by wanneer \'n betaling ontvang is.',
+        'active' => 'aktief',
+        'grace' => 'betaling uitstaande',
+        'suspended' => 'opgeskort',
+        'cancelled' => 'gekanselleer',
+        'read_only' => 'net lees: rekords kan gesien en uitgevoer word, niks nuuts word gestoor nie',
+        'since' => 'sedert :date',
+        'grace_until' => 'stoor tot :date',
+    ],
     'modules' => [
         'weer' => 'Weer',
         'kudde' => 'Kudde',
