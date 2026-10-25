@@ -141,6 +141,9 @@ return [
         'young_castrated' => 'Young castrated male',
     ],
     'animals' => [
+        'search' => 'Tag, name, breed, dam or sire',
+        'in_withdrawal' => 'In withdrawal',
+        'needs_weighing' => 'Needs weighing',
         'title' => 'Animals',
         'one' => 'animal',
         'record' => 'Record',

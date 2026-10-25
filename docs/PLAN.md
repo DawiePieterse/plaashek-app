@@ -204,7 +204,10 @@ Everything the farm-PC Kudde does today is the v1 checklist. Tick off here as bu
 
 **Office tab**
 - [x] Dashboard: head count by class, by camp, animals under withdrawal (Kudde's screen, with charts and reports)
-- [ ] Herd list, animal page with timeline and photos, corrections (list and page with timeline done, read only;
+- [x] Herd list (`Filament\Resources\Animals`, under Kudde in the menu): derived camp, class, last weight (amber
+  when due a weighing) and withdrawal; searched by tag, name, breed, dam or sire; filtered by status, species,
+  camp, class, in withdrawal and due a weighing
+- [ ] Animal page with timeline and photos, corrections (page with record, family and history done, read only;
   photos and corrections to do)
 - [x] Export: animals and events (CSV, `/kudde/api/export/*.csv`; the office button comes with the tab)
 
@@ -445,6 +448,9 @@ The owner's summary of the farm. On for every farm from `farm:create`, so it is 
 installation, before any paid module; like Weather it has no licence status and is never switched off. It reads
 one farm only (its own database). Tick off here as built.
 
+**Deferred** (owner's call, 25 October 2026): built once the other modules and the office screens are done, so
+its summary is designed from what they all hold. Phase 3 waits; Weather stays live on its own meanwhile.
+
 - [ ] A summary of what is happening on the farm: each enabled module contributes its own lines (as it gives its
   Home tile), so Eienaar grows with the farm and never names a module itself. With only Weather on, it is the
   weather summary; with Kudde, the herd's week as well
@@ -673,7 +679,7 @@ Same checks as BowlsBuddy, in CI on every push:
 | 0 | Skeleton from BowlsBuddy (Laravel 12, Filament 4, CI, session hook, build script, deploy doc); Afrihost package (Bronze Pro on `kregg.aserv.co.za`), farm subdomains' DNS pointed at it, landing page | Demo farm live at `demo.plaashek.co.za` over HTTPS (done 24 October 2026) | ½ week |
 | 1 | Minimal core: modules table and loading, `farm:create`, setup page, office login and roles, Farm settings, `af`/`en`, audit log | A farm can be created, its owner signs in and sets the farm's position | 1 week |
 | 2 | Weather: proxy and cache, `weather_days`, Weather Compare's screens at `/weer` and in the office, rain record, frost, PDF, offline | Bekfontein's forecast, rain record and a year-against-year chart, offline after first load | 1½ weeks |
-| 3 | Bekfontein live on Weather and Eienaar (both free): Eienaar's summary from the modules' contributions and its attention list (§2.7, AI analytics later), `update-all.sh`, privacy text | Bekfontein's owner uses Eienaar and Weather for a fortnight | 1 week + trial |
+| 3 | **Deferred until the other modules are done (§2.7).** Bekfontein live on Weather and Eienaar (both free): Eienaar's summary from the modules' contributions and its attention list (§2.7, AI analytics later), `update-all.sh`, privacy text | Bekfontein's owner uses Eienaar and Weather for a fortnight | 1 week + trial |
 | 4 | Kudde domain: animals, events, calvings, derived herd state; Pest port of the old tests | Old Kudde's cases pass | 1½–2 weeks |
 | 4b | Livestock types: species in Settings with their rules, tags per species, births with several young, pig litters tagged at weaning, species in the field app and export | A farm with cattle and sheep captures both, each counted in its own classes | 1½ weeks |
 | 5 | Kudde office tab: dashboard, herd, animal page, corrections, export; licence commands | The office's whole day passes as a browser test | 1–1½ weeks |

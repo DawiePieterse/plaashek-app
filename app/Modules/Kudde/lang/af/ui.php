@@ -141,6 +141,9 @@ return [
         'young_castrated' => 'Jong gekastreerde manlike',
     ],
     'animals' => [
+        'search' => 'Oorplaatjie, naam, ras, moer of vaar',
+        'in_withdrawal' => 'In onttrekking',
+        'needs_weighing' => 'Moet geweeg word',
         'title' => 'Diere',
         'one' => 'dier',
         'record' => 'Rekord',

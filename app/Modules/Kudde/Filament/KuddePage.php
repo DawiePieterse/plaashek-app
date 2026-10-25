@@ -3,6 +3,7 @@
 namespace App\Modules\Kudde\Filament;
 
 use App\Filament\Actions\ReportsAction;
+use App\Modules\Kudde\Filament\Resources\Animals\AnimalResource;
 use App\Modules\Kudde\Filament\Widgets\AverageWeightChart;
 use App\Modules\Kudde\Filament\Widgets\HerdByCampChart;
 use App\Modules\Kudde\Filament\Widgets\HerdByClassChart;
@@ -49,6 +50,8 @@ class KuddePage extends Page
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('animals')->label(__('kudde::ui.animals.title'))->icon(Heroicon::OutlinedListBullet)
+                ->url(AnimalResource::getUrl()),
             ReportsAction::make(KuddeModule::reports()),
             Action::make('field')->label(__('kudde::ui.open_field_app'))->icon(Heroicon::OutlinedDevicePhoneMobile)
                 ->url(route('kudde.field'))->openUrlInNewTab(),
