@@ -215,8 +215,8 @@ Everything the farm-PC Kudde does today is the v1 checklist. Tick off here as bu
   API and the field app carry the species (a request that names none and hits a tag two species share gets a
   409). Existing animals become cattle
 - [x] Births take one or more young (twins in sheep and goats); calving becomes "birth", named per species
-  (`POST /calvings` takes `young`; the field app's form still adds one young at a time: twins in the field are
-  still to do)
+  (`POST /calvings` takes `calf` plus `young`; the field app's birth form has a Twin button, one row per extra
+  young one, all one record)
 - [x] **Pigs: a litter on the sow, piglets tagged at weaning** (owner's call): the farrowing records born
   alive, stillborn and fostered; weaning records how many were weaned and creates the tagged animals, each
   with the sow as dam and the litter's date as birth date. Same option for any species set to "young tagged at

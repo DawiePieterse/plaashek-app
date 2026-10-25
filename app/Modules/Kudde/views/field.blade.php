@@ -311,7 +311,7 @@
      record on the server (POST /api/calvings) or one outbox entry. -->
 <div id="calvingModal" class="fixed inset-0 bg-black/50 hidden p-4 z-50 overflow-y-auto">
   <div class="bg-white rounded-xl p-5 w-full max-w-sm m-auto">
-    <div class="font-bold text-lg mb-1"><span id="calvingDam"></span> calved</div>
+    <div class="font-bold text-lg mb-1"><span id="calvingDam"></span> <span id="calvingTitle">calved</span></div>
     <div class="text-xs text-slate-500 mb-3" id="calvingHint">Records the calving on the cow and adds the calf, with her as the dam.</div>
     <label class="text-xs text-slate-500">Date *</label>
     <div class="chip-row" data-date-chips="calvingDate"></div>
@@ -328,9 +328,9 @@
       </div>
     </div>
     <div id="calfFields">
-    <label class="text-xs text-slate-500">Calf tag *</label>
+    <label class="text-xs text-slate-500" id="calfTagLabel">Calf tag *</label>
     <input id="calfTag" type="text" autocomplete="off" autocapitalize="characters" class="w-full border border-slate-300 rounded-lg p-3 text-lg mb-2">
-    <label class="text-xs text-slate-500">Calf sex *</label>
+    <label class="text-xs text-slate-500" id="calfSexLabel">Calf sex *</label>
     <div class="flex rounded-lg bg-slate-100 p-1 text-sm font-semibold mb-2" role="group" aria-label="Calf sex">
       <button id="calfFemaleBtn" type="button" class="seg-btn flex-1">Heifer</button>
       <button id="calfMaleBtn" type="button" class="seg-btn flex-1">Bull calf</button>
@@ -347,6 +347,9 @@
     </div>
     <label class="text-xs text-slate-500">Breed</label>
     <input id="calfBreed" type="text" class="w-full border border-slate-300 rounded-lg p-3 text-lg mb-2">
+    <!-- Twins and triplets: one more row each, a tag and a sex. Same birth, same dam, sire, breed and camp. -->
+    <div id="extraYoung" class="space-y-2 mb-2"></div>
+    <button id="addYoungBtn" type="button" class="w-full btn-outline rounded-lg py-2 font-semibold mb-2"><i class="fa-solid fa-plus"></i> Twin</button>
     </div>
     <label class="text-xs text-slate-500">Camp</label>
     <div id="calvingCampChips" class="chip-row"></div>
