@@ -84,9 +84,9 @@ class WeerModule extends Module
         $this->loadViewsFrom($this->modulePath('views'), 'weer');
         $this->loadTranslationsFrom($this->modulePath('lang'), 'weer');
 
-        if ($this->app->runningInConsole()) {
-            $this->commands([FillWeatherDays::class]);
-        }
+        // Not behind runningInConsole(): the office's "Fill history" button runs this command with Artisan::call()
+        // inside a web request, where a console-only command does not exist (and the button just errors).
+        $this->commands([FillWeatherDays::class]);
 
         // Yesterday's weather lands in weather_days before anyone is up, so modules that stamp weather
         // (Kudde's events) never wait on a live call.
