@@ -57,7 +57,7 @@ References, copied from and never imported:
 | App | **One app, `plaashek`, with modules** switched on per farm | One set of farm data across modules; one login per farm; one build to deploy |
 | Tenancy | **One install, folder, `.env` and database per farm**, shared by all its modules | The database server refuses another farm's data: each farm's DB user has privileges on its own database only |
 | Field sign-in | Username or cell + 4-digit PIN | Simpler than printed QR pairing (§5) |
-| Pricing | R2 000 setup once; R150 pm hosting; R150 pm per paid module (Kudde first); Weather free | Owner's call, 24 October 2026 (§1.4) |
+| Pricing | R2 000 setup once; R150 pm hosting; R150 pm per paid module (Kudde first), Boord R300 pm; Eienaar and Weather free | Owner's call, 24 October 2026; Boord 25 October 2026 (§1.4) |
 | Pilot | Bekfontein: Weather and Eienaar first, then Kudde | Owner's call, 24 and 25 October 2026 |
 | Build order | Minimal core + Farm settings → Weather → Eienaar (with Bekfontein going live, phase 3) → Kudde → Werkers → Boord | Weather is free and needs least core; Eienaar is the first module after installation; owner's call |
 | Eienaar | Free, on from `farm:create`, the first module after installation; a summary of the farm only, AI analytics in broad terms; one farm, never across farms | Owner's call, 25 October 2026: what every owner gets on day one; keeps the one-database-per-farm rule |
@@ -111,7 +111,8 @@ References, copied from and never imported:
 | Hosting | R150 per month per farm | Covers the Afrihost share, backups and the Weather data |
 | Kudde | R150 per month | First paid module |
 | Werkers | R150 per month | Second paid module, payroll and Span's time and attendance included; Boord's piece-work needs it |
-| Each later module | R150 per month | Boord, Veldnotas, Stoor, Water, Bespuitings, Werkswinkel, Oudit |
+| Boord | R300 per month | Two large pieces in one module: harvest in the field and the packhouse (owner's call, 25 October 2026) |
+| Each later module | R150 per month | Veldnotas, Stoor, Water, Bespuitings, Werkswinkel, Oudit |
 | Eienaar | Free | On for every farm from installation, no licence status, never switched off for non-payment |
 | Weather | Free | On for every farm, no licence status, never switched off for non-payment |
 
@@ -422,7 +423,7 @@ for that reason in September; this module holds them because payroll is its job)
 
 ### 2.5 Next: Boord
 
-Boord (R150 pm) is the third paid module, decided 24 October 2026. Its scope is written as its own section here
+Boord (R300 pm: harvest and packhouse, two large pieces) is the third paid module, decided 24 October 2026. Its scope is written as its own section here
 before any code, from the farm-PC Boord (Bekfontein's harvest and pack-house app today) and the suite's
 `boord-reuse-audit.md` and `piecework-build-scope.md`. Already settled by this plan: pickers are Werkers workers,
 identified by scanning their card at the scale, and their kilograms × rate become piece-work lines in the Werkers
