@@ -10,6 +10,7 @@ use App\Models\Worker;
 use App\Modules\Kudde\Models\Animal;
 use App\Modules\Kudde\Models\AnimalEvent;
 use App\Modules\Kudde\Models\Litter;
+use App\Modules\Kudde\Models\Photo;
 use App\Modules\Kudde\Models\Species;
 use App\Modules\Kudde\Support\FieldSession;
 use App\Modules\Kudde\Support\Herd;
@@ -112,6 +113,34 @@ class KuddeApiController extends Controller
         $animal = HerdState::animalByTag($tag, $this->species($request));
 
         return response()->json($animal->events()->orderByDesc('event_date')->orderByDesc('id')->get());
+    }
+
+    /** The animal's photos, newest first, each with a link that works for an hour (an img tag sends no token). */
+    public function photos(Request $request, string $tag): JsonResponse
+    {
+        $animal = HerdState::animalByTag($tag, $this->species($request));
+
+        return response()->json($animal->photos()->orderByDesc('taken_on')->orderByDesc('id')->get()
+            ->map(fn (Photo $p) => $p->only(['id', 'client_uuid', 'taken_on', 'note']) + ['url' => $p->url()])->all());
+    }
+
+    /** A photo, resized on the phone before it is sent; a retry with the same capture id stores nothing new. */
+    public function storePhoto(Request $request, string $tag): JsonResponse
+    {
+        $this->mayWrite($request);
+        $animal = HerdState::animalByTag($tag, $this->species($request));
+        $fields = $request->validate([
+            // The capture id first: a retry of a photo already stored needs no file checks to be answered.
+            'client_uuid' => ['nullable', 'string', 'max:80'],
+            'photo' => ['required', 'image', 'mimes:jpeg,png,webp', 'max:'.Photo::MAX_KB],
+            'taken_on' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:today'],
+            'note' => ['nullable', 'string', 'max:200'],
+        ]);
+
+        $photo = $this->herd($request)->addPhoto($animal, $fields['photo'], $fields['taken_on'] ?? null,
+            (string) ($fields['note'] ?? ''), $fields['client_uuid'] ?? null);
+
+        return response()->json($photo->only(['id', 'client_uuid', 'taken_on', 'note']) + ['url' => $photo->url()]);
     }
 
     // --- Events --------------------------------------------------------------------------------------

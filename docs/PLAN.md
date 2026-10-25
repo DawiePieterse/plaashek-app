@@ -189,7 +189,8 @@ Everything the farm-PC Kudde does today is the v1 checklist. Tick off here as bu
   stamped next morning by `kudde:weather`)
 
 **Photos**
-- [ ] Per animal, idempotent upload by `client_uuid`, resized on the phone, served only through the app
+- [x] Per animal, idempotent upload by `client_uuid`, resized on the phone, served only through the app
+  (`POST /animals/{tag}/photos` in the office and field APIs, `kudde_photos`, private disk, signed links for an hour)
 
 **Field app, opened by a worker's card** (owner's call, 25 October 2026)
 - [x] Old Kudde's field screens at `/kudde/field` (herd, weigh and treat sessions, move camp, calving, the
@@ -207,8 +208,9 @@ Everything the farm-PC Kudde does today is the v1 checklist. Tick off here as bu
 - [x] Herd list (`Filament\Resources\Animals`, under Kudde in the menu): derived camp, class, last weight (amber
   when due a weighing) and withdrawal; searched by tag, name, breed, dam or sire; filtered by status, species,
   camp, class, in withdrawal and due a weighing
-- [ ] Animal page with timeline and photos, corrections (page with record, family and history done, read only;
-  photos and corrections to do)
+- [x] Animal page with timeline and photos, corrections: record, family, history and photos; the office (owner,
+  manager, staff) corrects the record (not the tag or status) and an event's fields, removes an event (a removed
+  death or sale gives the status back) or a photo; every correction in the audit log
 - [x] Export: animals and events (CSV, `/kudde/api/export/*.csv`; the office button comes with the tab)
 
 **Livestock types** (owner's call, 25 October 2026: farms keep more than cattle)

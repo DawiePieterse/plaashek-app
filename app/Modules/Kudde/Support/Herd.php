@@ -6,10 +6,12 @@ use App\Models\AuditLog;
 use App\Modules\Kudde\Models\Animal;
 use App\Modules\Kudde\Models\AnimalEvent;
 use App\Modules\Kudde\Models\Litter;
+use App\Modules\Kudde\Models\Photo;
 use App\Modules\Kudde\Models\Species;
 use App\Modules\Weer\Models\WeatherDay;
 use App\Modules\Weer\WeatherDays;
 use App\Support\CampNames;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -333,6 +335,129 @@ class Herd
 
             return ['litter' => $litter->refresh(), 'young' => $mine(), 'replayed' => false];
         });
+    }
+
+    /**
+     * An office correction to an event: a mistyped weight, the wrong date, a dose. The kind and the animal stay:
+     * an event recorded on the wrong animal or as the wrong kind is removed and captured again. A new date is
+     * stamped with that day's weather; a camp is snapped to the office's spelling as on capture.
+     *
+     * @param  array<string, mixed>  $fields  any of event_date, value, location, product, dose, withdrawal_days, note
+     */
+    public function correctEvent(AnimalEvent $event, array $fields): AnimalEvent
+    {
+        $allowed = ['event_date', 'note'];
+        $allowed = [...$allowed, ...match ($event->kind) {
+            AnimalEvent::WEIGHT => ['value'],
+            AnimalEvent::TREATMENT => ['product', 'dose', 'withdrawal_days'],
+            AnimalEvent::MOVEMENT, AnimalEvent::BIRTH => ['location'],
+            default => [],
+        }];
+        $fields = array_intersect_key($fields, array_flip($allowed));
+        foreach (['note', 'product', 'dose'] as $key) {
+            if (array_key_exists($key, $fields)) {
+                $fields[$key] = self::tidy((string) $fields[$key]);
+            }
+        }
+        if (array_key_exists('location', $fields)) {
+            $fields['location'] = $this->location($event->kind, (string) $fields['location']);
+        }
+
+        return DB::transaction(function () use ($event, $fields) {
+            $before = $event->only(array_keys($fields));
+            $event->fill($fields);
+            if (! $event->isDirty()) {
+                return $event;
+            }
+            $changed = array_keys($event->getDirty());
+            if ($event->isDirty('event_date')) {
+                $event->weather_temp_max = $event->weather_temp_min = $event->weather_rain = null;
+                $this->stamp($event);
+            }
+            $event->save();
+            AuditLog::record('kudde.event.corrected', $event->animal->tag, self::dated($before, $changed), self::dated($event->only($changed), $changed));
+
+            return $event;
+        });
+    }
+
+    /**
+     * Takes an event off the record (captured on the wrong animal, or twice). A death or sale removed gives the
+     * animal back the status its remaining history says, as the status is only ever set by those events. A birth
+     * that holds a litter stays: the litter is that birth, counted.
+     */
+    public function removeEvent(AnimalEvent $event): void
+    {
+        if ($event->kind === AnimalEvent::BIRTH && Litter::query()->where('birth_event_id', $event->id)->exists()) {
+            throw new HerdException(__('kudde::ui.birth_holds_litter'), 409);
+        }
+
+        DB::transaction(function () use ($event) {
+            $animal = $event->animal;
+            $event->delete();
+            AuditLog::record('kudde.event.removed', $animal->tag, ['event_date' => $event->event_date->toDateString()]
+                + $event->only(['kind', 'value', 'location', 'product', 'note']));
+
+            if (isset(self::STATUS_ON_EVENT[$event->kind])) {
+                $last = $animal->events()->whereIn('kind', array_keys(self::STATUS_ON_EVENT))
+                    ->orderByDesc('event_date')->orderByDesc('id')->first();
+                $animal->update(['status' => $last !== null ? self::STATUS_ON_EVENT[$last->kind] : Animal::ALIVE]);
+            }
+        });
+    }
+
+    /**
+     * A photo of the animal, once, however many times a phone sends it: the file is stored only when the capture
+     * id is new. The office's upload comes through here too, with a file already on the disk.
+     *
+     * @param  UploadedFile|string  $file  an upload, or a path already on the photo disk
+     */
+    public function addPhoto(Animal $animal, UploadedFile|string $file, ?string $takenOn = null, string $note = '', ?string $uuid = null): Photo
+    {
+        if ($uuid !== null && ($already = Photo::query()->where('client_uuid', $uuid)->first()) !== null) {
+            if (is_string($file) && $file !== $already->path) {
+                app('filesystem')->disk(Photo::DISK)->delete($file);
+            }
+
+            return $already;
+        }
+
+        $path = $file instanceof UploadedFile ? $file->store(Photo::directory($animal->id), Photo::DISK) : $file;
+
+        $photo = Photo::query()->create([
+            'animal_id' => $animal->id,
+            'path' => $path,
+            'client_uuid' => $uuid,
+            'taken_on' => $takenOn ?? today()->toDateString(),
+            'note' => self::tidy($note),
+            ...$this->actor(),
+        ]);
+        $animal->touch();
+
+        return $photo;
+    }
+
+    public function removePhoto(Photo $photo): void
+    {
+        $photo->delete();
+        AuditLog::record('kudde.photo.removed', $photo->animal->tag, ['taken_on' => $photo->taken_on->toDateString()]);
+    }
+
+    /**
+     * Dates as days in the audit log, not Carbon's midnight timestamps.
+     *
+     * @param  array<string, mixed>  $values
+     * @param  list<string>  $keys
+     * @return array<string, mixed>
+     */
+    private static function dated(array $values, array $keys): array
+    {
+        $values = array_intersect_key($values, array_flip($keys));
+        if (($values['event_date'] ?? null) instanceof Carbon) {
+            $values['event_date'] = $values['event_date']->toDateString();
+        }
+
+        return $values;
     }
 
     /**

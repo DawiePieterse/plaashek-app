@@ -3,8 +3,11 @@
 namespace App\Modules\Kudde\Filament\Resources\Animals;
 
 use App\Models\Camp;
+use App\Models\User;
 use App\Modules\Kudde\Filament\Resources\Animals\Pages\ListAnimals;
 use App\Modules\Kudde\Filament\Resources\Animals\Pages\ViewAnimal;
+use App\Modules\Kudde\Filament\Resources\Animals\RelationManagers\EventsRelationManager;
+use App\Modules\Kudde\Filament\Resources\Animals\RelationManagers\PhotosRelationManager;
 use App\Modules\Kudde\Models\Animal;
 use App\Modules\Kudde\Models\Species;
 use App\Modules\Kudde\Support\HerdState;
@@ -30,7 +33,7 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * The herd in the office (owner's call, 25 October 2026): every animal in a list, and a page per animal with its
  * record, its family (parents to great-grandparents, births and offspring: Support\Lineage) and its history.
- * Read only: recording is the field app's job, at the animal.
+ * Recording is the field app's job, at the animal; the office corrects what was captured (ViewAnimal, the history).
  */
 class AnimalResource extends Resource
 {
@@ -264,12 +267,21 @@ class AnimalResource extends Resource
                 View::make('kudde::animal-family')
                     ->viewData(fn (Animal $record) => ['tree' => (new Lineage(self::state()))->of($record)]),
             ]),
-            Section::make(__('kudde::ui.animals.history'))->schema([
-                View::make('kudde::animal-history')
-                    ->viewData(fn (Animal $record) => ['events' => $record->events()->with('worker', 'user')
-                        ->orderByDesc('event_date')->orderByDesc('id')->get()]),
-            ]),
         ]);
+    }
+
+    /** The history and the photos, below the record: where the office corrects what was captured. */
+    public static function getRelations(): array
+    {
+        return [EventsRelationManager::class, PhotosRelationManager::class];
+    }
+
+    /** Who may correct the record: the people who run the herd, not a viewer. */
+    public static function mayCorrect(): bool
+    {
+        $user = auth()->user();
+
+        return $user instanceof User && in_array($user->role, [User::OWNER, User::MANAGER, User::STAFF], true);
     }
 
     public static function getPages(): array

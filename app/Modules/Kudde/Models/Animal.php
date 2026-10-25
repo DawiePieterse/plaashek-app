@@ -69,6 +69,12 @@ class Animal extends Model
         return $this->hasMany(AnimalEvent::class);
     }
 
+    /** @return HasMany<Photo, $this> */
+    public function photos(): HasMany
+    {
+        return $this->hasMany(Photo::class);
+    }
+
     public function isAlive(): bool
     {
         return $this->status === self::ALIVE;
