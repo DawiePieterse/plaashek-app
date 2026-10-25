@@ -116,6 +116,12 @@ Farm software as modules per farm, rebuilt on the BowlsBuddy model (`DawiePieter
 - Office herd: `Filament\Resources\Animals` (under Kudde in the menu, read only): the list (alive by default, tags
   sorted as read in SQL, `AnimalResource::byTag`) and a page per animal: record, family, history. The derived herd
   is loaded once per request (`AnimalResource::state()`). Filament injects closure parameters by name: `$query`.
+  The page's history and photos are relation managers (`RelationManagers\Events`, `Photos`), where the office
+  (`AnimalResource::mayCorrect()`: not a viewer) corrects: `Herd::correctEvent` (the kind's own fields only),
+  `removeEvent` (status back from what remains), `addPhoto`/`removePhoto`, all audited. The record's "Correct
+  record" changes neither tag nor status.
+- Photos (`Models\Photo`, `kudde_photos`): `photos/kudde/<animal id>/` on the private `local` disk, signed links
+  for an hour (`Photo::url()`), `POST /animals/{tag}/photos` (office and field), idempotent on `client_uuid`.
 - Weather comes from `weather_days` through `App\Modules\Weer\WeatherDays`, never a live call;
   `kudde:weather` (05:25) stamps events saved before their day was filled.
 - API at `/kudde/api/*` behind the office login; a viewer only reads. The same methods at
