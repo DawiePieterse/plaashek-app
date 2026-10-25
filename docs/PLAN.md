@@ -204,10 +204,11 @@ Everything the farm-PC Kudde does today is the v1 checklist. Tick off here as bu
 
 **Office tab**
 - [x] Dashboard: head count by class, by camp, animals under withdrawal (Kudde's screen, with charts and reports)
-- [x] Herd list (`Filament\HerdPage`, under Kudde in the menu): every animal with its derived camp, class, last
-  weight and withdrawal; searched by tag, name, breed, dam or sire; filtered by status, species, camp, class, in
-  withdrawal and due a weighing; sorted with tags in reading order
-- [ ] Animal page with timeline and photos, corrections
+- [x] Herd list (`Filament\Resources\Animals`, under Kudde in the menu): derived camp, class, last weight (amber
+  when due a weighing) and withdrawal; searched by tag, name, breed, dam or sire; filtered by status, species,
+  camp, class, in withdrawal and due a weighing
+- [ ] Animal page with timeline and photos, corrections (page with record, family and history done, read only;
+  photos and corrections to do)
 - [x] Export: animals and events (CSV, `/kudde/api/export/*.csv`; the office button comes with the tab)
 
 **Livestock types** (owner's call, 25 October 2026: farms keep more than cattle)
@@ -246,6 +247,8 @@ Everything the farm-PC Kudde does today is the v1 checklist. Tick off here as bu
 - [ ] Checks, warnings not blocks: sire male, dam female, same species, born before the offspring
 - [ ] Animal page (office and field): three generations of pedigree, all offspring, a dam's births with the
   interval between them, a sire's offspring with their weaning weights
+  (office only, owner's call: the animal page under Kudde → Animals, `Support\Lineage`, parents found by tag
+  within the species; sire weaning weights wait for breeding)
 - [ ] With breeding: at a birth the sire is suggested from the male that was with her about one gestation
   earlier, or from her AI record; choosing a male for a female warns if they share a grandparent or
   great-grandparent

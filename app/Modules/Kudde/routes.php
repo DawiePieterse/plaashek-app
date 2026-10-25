@@ -13,6 +13,7 @@ Route::middleware(['web', 'auth', 'module:kudde', 'throttle:600,1'])->prefix('ku
     Route::get('/animals/{tag}', [Api::class, 'animal'])->name('animal');
     Route::patch('/animals/{tag}', [Api::class, 'updateAnimal'])->name('animal.update');
     Route::get('/animals/{tag}/events', [Api::class, 'animalEvents'])->name('animal.events');
+    Route::get('/animals/{tag}/lineage', [Api::class, 'lineage'])->name('animal.lineage');
 
     Route::get('/events', [Api::class, 'events'])->name('events');
     Route::post('/events', [Api::class, 'storeEvent'])->name('events.store');
