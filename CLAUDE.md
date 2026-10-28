@@ -78,8 +78,17 @@ Farm software as modules per farm, rebuilt on the BowlsBuddy model (`DawiePieter
   never deleted, only disabled; "Pair again" replaces a phone's token.
 - The field app's core API is `routes/field.php`, loaded outside the web group (no session, no CSRF: Pest skips
   CSRF, so a route left in `web.php` passes its tests and gets 419 on a real phone).
-- Build order for phase 6 is in PLAN.md §5.1; steps 2–6 (card sign-in in the core, modules per worker, the
-  `/field` shell, Kudde and Weather moved in, disable and the 21-day window, the field browser test) are open.
+- The card scan is core (`App\Support\FieldSession`, `field_sessions`, `POST /field/api/sign-in`, own limiter
+  `field-sign-in`): only on a paired phone, the token bound to that phone, until the farm's midnight. Route
+  middleware `field.worker:<code>`: no phone 401 `unpaired`, no session 401 `signed_out`, module not ticked 403.
+  Each request through it is the phone's sync (`devices.last_sync_at`, `last_worker_id`).
+- Modules per worker: `workers.modules` (null: every one, for workers from before), ticked on the Workers form;
+  only modules with `Module::fieldUrl()` (screens on a phone) are offered. `FieldSession::modulesFor()`.
+- Records name the phone too: `device_id` on Kudde's animals, events and photos (`Herd::by($user, $worker, $device)`).
+- `/field` redirects to the first enabled module's `fieldUrl()` until the one field app exists (step 3); the
+  browser keeps the QR's `#pair=` across it.
+- Build order for phase 6 is in PLAN.md §5.1; steps 3–6 (the `/field` shell, Kudde and Weather moved in, disable
+  and the 21-day window, the field browser test) are open.
 
 ## Workers (core)
 
@@ -141,14 +150,13 @@ Farm software as modules per farm, rebuilt on the BowlsBuddy model (`DawiePieter
 - Weather comes from `weather_days` through `App\Modules\Weer\WeatherDays`, never a live call;
   `kudde:weather` (05:25) stamps events saved before their day was filled.
 - API at `/kudde/api/*` behind the office login; a viewer only reads. The same methods at
-  `/kudde/field/api/*` behind a worker's card session (`Support\FieldSession`, middleware `kudde.worker`,
-  Bearer token, valid until the farm's midnight), less corrections, camp management and exports. Records get
+  `/kudde/field/api/*` behind a worker's card session on a paired phone (the core's `field.worker:kudde`;
+  `X-Device` plus Bearer token), less corrections, camp management and exports. Records get
   `worker_id` from the session, or from `captured_by` (the worker signed in when an outbox record was made).
 - The field app is `/kudde/field` (`views/field.blade.php`, `public/modules/kudde/`): old Kudde's field screens
-  plus `js/signin.js`, the daily card scan, and `js/species.js`, the species switch (only with more than one;
+  plus `js/signin.js`, the pairing (`#pair=` or typed; the device token in `localStorage.plaashek_device`) and the
+  daily card scan through `/field/api`, and `js/species.js`, the species switch (only with more than one;
   `api.js` adds the species to every write, `idb.js` stamps it on an outbox entry when made). Service worker served by a route, cache name hashed from the shell.
-  Card scans have their own named limiter (`kudde-sign-in`): a plain `throttle:N,1` shares its counter with
-  the group's.
 - Generated notes ("Calf K1", "Born to C1") are English: English in the database.
 - Settings screen `Filament\KuddeSettingsPage`: "weigh every" (`Support\KuddeSettings`, default 182 days, also
   sent to the field app), the camps' "Manage camps" button and the field app's address as a QR code.

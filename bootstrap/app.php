@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureModuleEnabled;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetFarmLocale;
+use App\Support\FieldSession;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -23,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->alias([
             'module' => EnsureModuleEnabled::class,
+            'field.worker' => FieldSession::class,
         ]);
         // Pages outside the panel (the Weather page) send a signed-out visitor to the panel's login.
         $middleware->redirectGuestsTo('/admin/login');

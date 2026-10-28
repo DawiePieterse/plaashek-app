@@ -18,6 +18,8 @@ use Illuminate\Support\Carbon;
  * @property string $cell
  * @property string|null $photo path on the private disk
  * @property bool $active
+ * @property list<string>|null $modules the module codes this worker may use on a phone; null: every one (registered
+ *                                      before modules were chosen per worker)
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
@@ -33,7 +35,13 @@ class Worker extends Model
 
     protected function casts(): array
     {
-        return ['active' => 'boolean'];
+        return ['active' => 'boolean', 'modules' => 'array'];
+    }
+
+    /** Whether this worker gets the module's tile on a phone (PLAN.md section 5.1). */
+    public function mayUse(string $code): bool
+    {
+        return $this->modules === null || in_array($code, $this->modules, true);
     }
 
     /** An empty box on the form arrives as null; the register stores it as nothing, not as unknown. */
@@ -72,7 +80,7 @@ class Worker extends Model
     /** @return array<string, mixed> */
     private function audited(): array
     {
-        return $this->only(['number', 'first_name', 'last_name', 'preferred_name', 'active']);
+        return $this->only(['number', 'first_name', 'last_name', 'preferred_name', 'active', 'modules']);
     }
 
     /** The name a card prints and a phone shows: the preferred name if there is one. */

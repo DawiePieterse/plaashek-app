@@ -53,14 +53,14 @@ it('lists the photos with links, newest first', function () {
     expect(array_column($this->getJson(kapi('/animals/A1/photos'))->assertOk()->json(), 'client_uuid'))->toBe(['new', 'old']);
 });
 
-it('takes photos from a worker\'s phone, stamped with the worker', function () {
+it('takes photos from a worker\'s phone, stamped with the worker and the phone', function () {
     $worker = Worker::query()->create(['number' => '001', 'first_name' => 'Jan', 'last_name' => 'Mathebula']);
-    $token = $this->postJson('/kudde/field/api/sign-in', ['number' => '001'])->assertOk()->json('token');
+    $phone = pairPhone();
 
     $this->post('/kudde/field/api/animals/A1/photos', ['photo' => UploadedFile::fake()->image('a1.jpg'), 'client_uuid' => 'f-1'],
-        ['Authorization' => "Bearer {$token}", 'Accept' => 'application/json'])->assertOk();
+        phoneHeaders($phone, scanOn($phone, '001')))->assertOk();
 
-    expect(Photo::query()->sole()->worker_id)->toBe($worker->id);
+    expect(Photo::query()->sole()->worker_id)->toBe($worker->id)->and(Photo::query()->sole()->device_id)->not->toBeNull();
 });
 
 it('removes a photo with its file, from the office page', function () {

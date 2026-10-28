@@ -1,12 +1,14 @@
 <?php
 
-// The Kudde field app opened by a worker's card scan, once a day.
+// The Kudde field app opened by a worker's card scan, once a day, on a phone the office has paired (PLAN.md 5.1).
 
+use App\Models\Device;
 use App\Models\User;
 use App\Models\Worker;
 use App\Modules\Kudde\Models\AnimalEvent;
 use App\Modules\Kudde\Models\Species;
 use App\Modules\ModuleRegistry;
+use App\Support\Devices;
 use Illuminate\Testing\TestResponse;
 
 beforeEach(function () {
@@ -14,16 +16,18 @@ beforeEach(function () {
     $this->travelTo(today()->setTime(7, 0));
     Worker::query()->create(['number' => '001', 'first_name' => 'Johannes', 'last_name' => 'Mathebula', 'preferred_name' => 'Jan']);
     Worker::query()->create(['number' => '002', 'first_name' => 'Sipho', 'last_name' => 'Ndlovu']);
+    $this->phone = pairPhone();
 });
 
+/** The card scanned on the test's paired phone. */
 function scanCard(string $number): TestResponse
 {
-    return test()->postJson('/kudde/field/api/sign-in', ['number' => $number]);
+    return test()->postJson('/field/api/sign-in', ['number' => $number], phoneHeaders(test()->phone));
 }
 
 function fieldApi(string $token): array
 {
-    return ['Authorization' => "Bearer {$token}", 'Accept' => 'application/json'];
+    return phoneHeaders(test()->phone, $token);
 }
 
 it('signs a worker in by their card until midnight', function () {
@@ -32,7 +36,43 @@ it('signs a worker in by their card until midnight', function () {
     expect($body['worker'])->toBe(['number' => '001', 'name' => 'Jan Mathebula'])
         ->and(strlen($body['token']))->toBe(48)
         ->and($body['expires_at'])->toBe(today()->endOfDay()->toIso8601String());
-    $this->assertDatabaseMissing('kudde_field_sessions', ['token_hash' => $body['token']]);
+    expect($body['modules'])->toBe(['kudde']);
+    $this->assertDatabaseMissing('field_sessions', ['token_hash' => $body['token']]);
+    expect(Device::query()->sole()->lastWorker->number)->toBe('001');
+});
+
+it('opens nothing on a phone the office has not paired, or has disabled', function () {
+    $this->postJson('/field/api/sign-in', ['number' => '001'])->assertUnauthorized()->assertJsonPath('unpaired', true);
+
+    $token = scanCard('001')->json('token');
+    app(Devices::class)->disable(Device::query()->sole());
+    $this->getJson('/kudde/field/api/animals', fieldApi($token))->assertUnauthorized()->assertJsonPath('unpaired', true);
+    scanCard('001')->assertUnauthorized();
+});
+
+it('keeps a day\'s token to the phone it was scanned on', function () {
+    $token = scanCard('001')->json('token');
+    $other = pairPhone('Spare phone');
+
+    $this->getJson('/kudde/field/api/animals', phoneHeaders($other, $token))->assertUnauthorized()->assertJsonPath('signed_out', true);
+    $this->getJson('/kudde/field/api/animals', fieldApi($token))->assertOk();
+});
+
+it('shows a worker only the modules the office ticked for them', function () {
+    Worker::query()->where('number', '002')->update(['modules' => []]);
+    $token = scanCard('002')->assertOk()->assertJsonPath('modules', [])->json('token');
+
+    $this->getJson('/kudde/field/api/animals', fieldApi($token))->assertForbidden();
+    expect(collect($this->getJson('/field/api/workers', fieldApi($token))->json())->pluck('modules', 'number')->all())
+        ->toBe(['001' => ['kudde'], '002' => []]);
+});
+
+it('names the phone on what is captured with it', function () {
+    $token = scanCard('001')->json('token');
+    $this->postJson('/kudde/field/api/animals', ['tag' => 'A1', 'sex' => 'female', 'camp' => 'Bo'], fieldApi($token))->assertOk();
+
+    expect(AnimalEvent::query()->sole()->device_id)->toBe(Device::query()->sole()->id)
+        ->and(Device::query()->sole()->last_sync_at)->not->toBeNull();
 });
 
 it('refuses an unknown card and a worker who has left, each saying why', function () {
@@ -45,7 +85,8 @@ it('refuses an unknown card and a worker who has left, each saying why', functio
 it('opens the herd to a scanned-in phone, and to nobody else', function () {
     $token = scanCard('001')->json('token');
 
-    $this->getJson('/kudde/field/api/animals')->assertUnauthorized()->assertJsonPath('signed_out', true);
+    $this->getJson('/kudde/field/api/animals')->assertUnauthorized()->assertJsonPath('unpaired', true);
+    $this->getJson('/kudde/field/api/animals', phoneHeaders(test()->phone))->assertUnauthorized()->assertJsonPath('signed_out', true);
     $this->getJson('/kudde/field/api/animals', fieldApi('not-a-token'))->assertUnauthorized();
     $this->getJson('/kudde/field/api/animals', fieldApi($token))->assertOk();
 });
@@ -114,14 +155,14 @@ it('lets the phone recognise cards offline, without anyone\'s cell number', func
     Worker::query()->create(['number' => '010', 'first_name' => 'Gone', 'active' => false, 'cell' => '082']);
     $token = scanCard('001')->json('token');
 
-    expect($this->getJson('/kudde/field/api/workers', fieldApi($token))->json())
-        ->toBe([['number' => '001', 'name' => 'Jan Mathebula'], ['number' => '002', 'name' => 'Sipho Ndlovu']]);
+    expect($this->getJson('/field/api/workers', fieldApi($token))->json())
+        ->toBe([['number' => '001', 'name' => 'Jan Mathebula', 'modules' => ['kudde']], ['number' => '002', 'name' => 'Sipho Ndlovu', 'modules' => ['kudde']]]);
 });
 
 it('ends the session when the worker hands over', function () {
     $token = scanCard('001')->json('token');
 
-    $this->deleteJson('/kudde/field/api/sign-in', [], fieldApi($token))->assertNoContent();
+    $this->deleteJson('/field/api/sign-in', [], fieldApi($token))->assertNoContent();
     $this->getJson('/kudde/field/api/animals', fieldApi($token))->assertUnauthorized();
 });
 
@@ -143,9 +184,11 @@ it('serves the field app and its service worker, and nothing for a farm without 
     $this->get('/kudde/field/sw.js')->assertOk()->assertHeader('Service-Worker-Allowed', '/kudde/field');
     $this->get('/kudde/field/manifest.webmanifest')->assertOk()->assertJsonPath('start_url', '/kudde/field');
 
+    $token = scanCard('001')->json('token');
     app(ModuleRegistry::class)->setEnabled([]);
     $this->get('/kudde/field')->assertNotFound();
-    scanCard('001')->assertNotFound();
+    $this->getJson('/kudde/field/api/animals', fieldApi($token))->assertNotFound();
+    expect(scanCard('001')->json('modules'))->toBe([]);
 });
 
 it('lets the page use the camera', function () {

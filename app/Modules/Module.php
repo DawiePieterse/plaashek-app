@@ -55,6 +55,15 @@ abstract class Module extends ServiceProvider
     }
 
     /**
+     * Where the module's screens open on a phone, or null if it has none. A module with one gets a tick on each
+     * worker (the modules they may use) and, from the field app, a tile on the phone's home screen.
+     */
+    public static function fieldUrl(): ?string
+    {
+        return null;
+    }
+
+    /**
      * The module's tile on the office Home page, or null for none. Only asked for when the farm has the module
      * switched on. Keep it to a couple of quick queries: Home is the first page every office user opens.
      */

@@ -43,6 +43,8 @@ return [
         'version' => 'The release this farm runs',
     ],
     'workers' => [
+        'modules' => 'On the phone',
+        'modules_hint' => 'What this worker sees after scanning their card.',
         'report' => 'Worker register',
         'active_only' => 'Working here',
         'inactive_only' => 'Left',
@@ -94,6 +96,12 @@ return [
     'status' => [
         'online' => 'Online',
         'offline' => 'Offline',
+    ],
+    'field' => [
+        'scan_card' => 'Scan your card to carry on',
+        'unknown_card' => 'Card :number is not one of this farm\'s workers',
+        'not_working_here' => ':name no longer works here',
+        'not_allowed' => ':name may not use this on the phone. Ask the office.',
     ],
     'devices' => [
         'title' => 'Phones',

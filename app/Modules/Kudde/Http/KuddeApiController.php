@@ -13,7 +13,6 @@ use App\Modules\Kudde\Models\AnimalEvent;
 use App\Modules\Kudde\Models\Litter;
 use App\Modules\Kudde\Models\Photo;
 use App\Modules\Kudde\Models\Species;
-use App\Modules\Kudde\Support\FieldSession;
 use App\Modules\Kudde\Support\Herd;
 use App\Modules\Kudde\Support\HerdException;
 use App\Modules\Kudde\Support\HerdState;
@@ -21,6 +20,7 @@ use App\Modules\Kudde\Support\KuddeSettings;
 use App\Modules\Kudde\Support\Lineage;
 use App\Modules\Kudde\Support\Tags;
 use App\Support\CampNames;
+use App\Support\FieldSession;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -539,7 +539,7 @@ class KuddeApiController extends Controller
             $worker = Worker::query()->where('number', $capturedBy)->first() ?? $worker;
         }
 
-        return $this->herd->by(null, $worker->id)->of($this->species($request));
+        return $this->herd->by(null, $worker->id, FieldSession::device($request)?->id)->of($this->species($request));
     }
 
     /**

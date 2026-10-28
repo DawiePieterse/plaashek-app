@@ -1,8 +1,10 @@
 <?php
 
+use App\Models\Device;
 use App\Models\User;
 use App\Modules\Kudde\Http\KuddeApiController;
 use App\Services\FarmSetup;
+use App\Support\Devices;
 use App\Support\Farm;
 use App\Support\Settings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -34,6 +36,27 @@ function farm(array $overrides = []): User
     ], $overrides));
 
     return $owner;
+}
+
+/** A phone paired the way the office pairs one (PLAN.md section 5.1): its token, for the X-Device header. */
+function pairPhone(string $label = 'Crush phone'): string
+{
+    $devices = app(Devices::class);
+
+    return $devices->pair($devices->pairingCode(Device::query()->create(['label' => $label])))['token'];
+}
+
+/** The headers a paired phone sends, with a worker's day token once a card is scanned. */
+function phoneHeaders(string $device, ?string $session = null): array
+{
+    return array_filter(['X-Device' => $device, 'Authorization' => $session !== null ? "Bearer {$session}" : null,
+        'Accept' => 'application/json']);
+}
+
+/** A worker's card scanned on that phone: the day's token. */
+function scanOn(string $device, string $number): string
+{
+    return test()->postJson('/field/api/sign-in', ['number' => $number], phoneHeaders($device))->assertOk()->json('token');
 }
 
 function setting(string $key): ?string

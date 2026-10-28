@@ -4,7 +4,12 @@
 // Plaashek: the API lives under /kudde/field, every request carries the token
 // a worker's card scan gave this phone (signin.js), a 401 sends the phone back
 // to the scan screen, and Laravel's error bodies say "message", not "detail".
+// Every request also carries the phone's own token (X-Device): the office
+// pairs the phone once, and a card scan works only on a paired phone.
 const API_BASE = "/kudde/field";
+// The core's field API: pairing, the card scan and the workers list, shared
+// by every module's field screens.
+const FIELD_API = "/field/api";
 
 const Kudde = {
   // Bump on every deploy that touches frontend code, shown in each screen's
@@ -17,6 +22,43 @@ const Kudde = {
   // reported as a normal network failure so callers fall back to the
   // offline queue instead of waiting.
   NETWORK_TIMEOUT_MS: 8000,
+
+  // The phone's pairing with the farm, kept until the office disables it:
+  // { token, label }. Shared by every module's screens on this site.
+  DEVICE_KEY: "plaashek_device",
+
+  device() {
+    try { return JSON.parse(localStorage.getItem(Kudde.DEVICE_KEY) || "null"); } catch (_) { return null; }
+  },
+
+  setDevice(value) {
+    try {
+      if (value) localStorage.setItem(Kudde.DEVICE_KEY, JSON.stringify(value));
+      else localStorage.removeItem(Kudde.DEVICE_KEY);
+    } catch (_) { /* private mode: paired for this page only */ }
+  },
+
+  // The headers every request to the farm carries: the phone, and the
+  // worker's day once a card is scanned.
+  authHeaders() {
+    const headers = {};
+    const device = Kudde.device();
+    if (device && device.token) headers["X-Device"] = device.token;
+    const token = typeof KuddeSignIn !== "undefined" ? KuddeSignIn.token() : null;
+    if (token) headers.Authorization = `Bearer ${token}`;
+    return headers;
+  },
+
+  // A 401 is either the phone (no longer paired: back to pairing) or the
+  // worker's day (back to the scan screen). Either way the request failed as
+  // usual, so an outbox entry stays queued.
+  _refused(status, text) {
+    if (status !== 401 || typeof KuddeSignIn === "undefined") return;
+    let unpaired = false;
+    try { unpaired = !!(JSON.parse(text) || {}).unpaired; } catch (_) { /* not JSON */ }
+    if (unpaired) KuddeSignIn.unpaired();
+    else KuddeSignIn.lost();
+  },
 
   async _fetchWithTimeout(url, options = {}, timeoutMs) {
     const controller = new AbortController();
@@ -65,15 +107,13 @@ const Kudde = {
     return body.trim() || fallback;
   },
 
-  async api(path, { method = "GET", body, timeoutMs } = {}) {
-    const headers = { Accept: "application/json" };
+  async api(path, { method = "GET", body, timeoutMs, base = API_BASE } = {}) {
     // Signed in this morning with no signal: the first request with signal
     // fetches the day's token before anything else goes out.
     if (typeof KuddeSignIn !== "undefined" && KuddeSignIn.worker() && !KuddeSignIn.token()) {
       await KuddeSignIn.ensureToken();
     }
-    const token = typeof KuddeSignIn !== "undefined" ? KuddeSignIn.token() : null;
-    if (token) headers.Authorization = `Bearer ${token}`;
+    const headers = { Accept: "application/json", ...Kudde.authHeaders() };
     // Tags are unique per species: a write names the species the phone is
     // working in (an outbox entry already carries the one it was made in,
     // idb.js), and an animal's own page asks within it.
@@ -90,12 +130,10 @@ const Kudde = {
       payload = JSON.stringify(body);
     }
     const res = await Kudde._fetchWithTimeout(
-      `${API_BASE}${path}`, { method, headers, body: payload }, timeoutMs);
+      `${base}${path}`, { method, headers, body: payload }, timeoutMs);
     if (!res.ok) {
       const text = await res.text().catch(() => "");
-      // No session, or yesterday's: back to the scan screen. The request is
-      // reported as a failure as usual, so an outbox entry stays queued.
-      if (res.status === 401 && typeof KuddeSignIn !== "undefined") KuddeSignIn.lost();
+      Kudde._refused(res.status, text);
       throw new Error(`${res.status} ${text}`);
     }
     const contentType = res.headers.get("content-type") || "";
@@ -106,10 +144,14 @@ const Kudde = {
   // so the browser must set its own Content-Type (with the boundary) -
   // setting one manually here would break the upload.
   async apiUpload(path, formData, { timeoutMs } = {}) {
+    if (typeof KuddeSignIn !== "undefined" && KuddeSignIn.worker() && !KuddeSignIn.token()) {
+      await KuddeSignIn.ensureToken();
+    }
     const res = await Kudde._fetchWithTimeout(
-      `${API_BASE}${path}`, { method: "POST", body: formData }, timeoutMs);
+      `${API_BASE}${path}`, { method: "POST", body: formData, headers: { Accept: "application/json", ...Kudde.authHeaders() } }, timeoutMs);
     if (!res.ok) {
       const text = await res.text().catch(() => "");
+      Kudde._refused(res.status, text);
       throw new Error(`${res.status} ${text}`);
     }
     return res.json();

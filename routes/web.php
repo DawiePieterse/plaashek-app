@@ -3,6 +3,7 @@
 use App\Http\Controllers\ManifestController;
 use App\Http\Controllers\SetupController;
 use App\Http\Controllers\WorkerCardController;
+use App\Modules\ModuleRegistry;
 use App\Services\FarmSetup;
 use Illuminate\Support\Facades\Route;
 
@@ -15,6 +16,17 @@ Route::post('/setup', [SetupController::class, 'store'])->name('setup.store')->m
 
 // Workers' cards, printed from the browser (the Workers list under Farm settings opens this with its selection).
 Route::get('/workers/cards', WorkerCardController::class)->middleware('auth')->name('workers.cards');
+
+// Where a phone opens the field app; the pairing QR points here (PLAN.md section 5.1). Until the one field app
+// exists, the first module with screens on a phone. A browser keeps the #pair= part across the redirect.
+Route::get('/field', function (ModuleRegistry $modules) {
+    foreach ($modules->all() as $module) {
+        if ($module::fieldUrl() !== null && $modules->isEnabled($module::code())) {
+            return redirect($module::fieldUrl());
+        }
+    }
+    abort(404);
+})->name('field');
 
 // The office's home-screen app (its icon and name).
 Route::get('/manifest.webmanifest', ManifestController::class)->name('manifest');

@@ -21,9 +21,6 @@ return [
     'camp_exists' => "Daar is reeds 'n kamp met die naam :name",
     'camp_holds' => '{1} :name het nog :count dier - skuif dit eers|[2,*] :name het nog :count diere - skuif hulle eers',
     'no_camp' => 'Geen sodanige kamp nie',
-    'scan_card' => 'Skandeer jou kaart om voort te gaan',
-    'unknown_card' => 'Kaart :number is nie een van hierdie plaas se werkers nie',
-    'not_working_here' => ':name werk nie meer hier nie',
     'tile_alive' => '{1} lewend|[0,*] lewend',
     'settings' => [
         'title' => 'Kudde',
@@ -40,6 +37,15 @@ return [
     ],
     // Die veldtoep se aanmeldskerm en kopstrook, na die foon gestuur as window.PLAASHEK.t.
     'field' => [
+        'pair_title' => 'Koppel hierdie foon',
+        'pair_hint' => 'Vra die kantoor vir \'n kode (Instellings, Fone) en skandeer dit met die kamera, of tik dit hier. Een keer is genoeg.',
+        'pair_placeholder' => 'Kode',
+        'pair_button' => 'Koppel',
+        'pairing' => 'Koppel…',
+        'paired' => 'Gekoppel. Skandeer nou jou kaart.',
+        'pair_needs_signal' => 'Koppel het sein nodig. Kry sein en probeer weer.',
+        'unpaired' => 'Hierdie foon is nie meer aan die plaas gekoppel nie. Vra die kantoor vir \'n nuwe kode.',
+        'not_allowed' => 'Jy mag nie Kudde op die foon gebruik nie. Vra die kantoor.',
         'scan_title' => 'Skandeer jou kaart',
         'scan_hint' => 'Hou jou werkerkaart voor die kamera. Een skandering per dag is genoeg.',
         'scan_button' => 'Skandeer kaart',

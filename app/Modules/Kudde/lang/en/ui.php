@@ -21,9 +21,6 @@ return [
     'camp_exists' => 'There is already a camp called :name',
     'camp_holds' => '{1} :name still holds :count animal - move it first|[2,*] :name still holds :count animals - move them first',
     'no_camp' => 'No such camp',
-    'scan_card' => 'Scan your card to carry on',
-    'unknown_card' => 'Card :number is not one of this farm\'s workers',
-    'not_working_here' => ':name no longer works here',
     'tile_alive' => '{1} alive|[0,*] alive',
     'settings' => [
         'title' => 'Kudde',
@@ -40,6 +37,15 @@ return [
     ],
     // The field app's sign-in screen and header, sent to the phone as window.PLAASHEK.t.
     'field' => [
+        'pair_title' => 'Pair this phone',
+        'pair_hint' => 'Ask the office for a code (Settings, Phones) and scan it with the camera, or type it here. Once is enough.',
+        'pair_placeholder' => 'Code',
+        'pair_button' => 'Pair',
+        'pairing' => 'Pairing…',
+        'paired' => 'Paired. Now scan your card.',
+        'pair_needs_signal' => 'Pairing needs signal. Find signal and try again.',
+        'unpaired' => 'This phone is no longer paired with the farm. Ask the office for a new code.',
+        'not_allowed' => 'You may not use Kudde on the phone. Ask the office.',
         'scan_title' => 'Scan your card',
         'scan_hint' => 'Hold your worker card up to the camera. One scan a day is enough.',
         'scan_button' => 'Scan card',
