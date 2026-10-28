@@ -9,8 +9,11 @@ use App\Console\Commands\FarmStaffPassword;
 use App\Modules\ModuleRegistry;
 use App\Support\Farm;
 use App\Support\Settings;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -41,6 +44,9 @@ class AppServiceProvider extends ServiceProvider
         }
 
         Password::defaults(fn () => Password::min(8));
+
+        // Pairing codes are eight characters from 31, open ten minutes: this keeps guessing them out of reach.
+        RateLimiter::for('field-pair', fn (Request $request) => Limit::perMinute(10)->by('field-pair|'.$request->ip()));
 
         if ($this->app->runningInConsole()) {
             $this->commands([FarmCreate::class, FarmLicence::class, FarmModules::class, FarmStaffPassword::class]);

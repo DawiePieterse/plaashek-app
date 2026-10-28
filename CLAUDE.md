@@ -69,6 +69,18 @@ Farm software as modules per farm, rebuilt on the BowlsBuddy model (`DawiePieter
   `farm.js` (forecast, rain record, frost) added. Pure logic is tested in `tests/js/`.
 - Field names in `fields.js` and the quick read (`insights.js`) are English only for now.
 
+## Phones (core, PLAN.md §5.1)
+
+- Workers keep the card scan (no field users or PINs). A phone is paired by the office first: Settings → Phones
+  (`Filament\Resources\Devices`, owner/manager) names it and shows a one-use 8-character code and its QR
+  (`/field#pair=CODE`), open 10 minutes. The phone redeems it at `POST /field/api/pair` for a long-lived token,
+  sent as the `X-Device` header (`App\Support\Devices`: hashes only, `fromRequest()`, `disable()`). Phones are
+  never deleted, only disabled; "Pair again" replaces a phone's token.
+- The field app's core API is `routes/field.php`, loaded outside the web group (no session, no CSRF: Pest skips
+  CSRF, so a route left in `web.php` passes its tests and gets 419 on a real phone).
+- Build order for phase 6 is in PLAN.md §5.1; steps 2–6 (card sign-in in the core, modules per worker, the
+  `/field` shell, Kudde and Weather moved in, disable and the 21-day window, the field browser test) are open.
+
 ## Workers (core)
 
 - `workers` (`App\Models\Worker`) is the minimal register under Farm settings: number, names, cell, photo,
