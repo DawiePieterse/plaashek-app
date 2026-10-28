@@ -30,6 +30,8 @@ class Herd
 
     private ?int $workerId = null;
 
+    private ?int $deviceId = null;
+
     /** The species the request names, for its tag lookups and new animals; null: any, or the farm's default. */
     private ?Species $species = null;
 
@@ -37,14 +39,16 @@ class Herd
     private const STATUS_ON_EVENT = [AnimalEvent::DEATH => Animal::DEAD, AnimalEvent::SALE => Animal::SOLD];
 
     /**
-     * The herd as written by this office user or worker: every record it writes is stamped with them. A copy,
+     * The herd as written by this office user, or this worker on this phone: every record it writes is stamped
+     * with them. A copy,
      * because Herd is a singleton and one request's person must never leak into the next's.
      */
-    public function by(?int $userId = null, ?int $workerId = null): self
+    public function by(?int $userId = null, ?int $workerId = null, ?int $deviceId = null): self
     {
         $herd = clone $this;
         $herd->userId = $userId;
         $herd->workerId = $workerId;
+        $herd->deviceId = $deviceId;
 
         return $herd;
     }
@@ -589,10 +593,10 @@ class Herd
         return $event;
     }
 
-    /** @return array{user_id: int|null, worker_id: int|null} */
+    /** @return array{user_id: int|null, worker_id: int|null, device_id: int|null} */
     private function actor(): array
     {
-        return ['user_id' => $this->userId, 'worker_id' => $this->workerId];
+        return ['user_id' => $this->userId, 'worker_id' => $this->workerId, 'device_id' => $this->deviceId];
     }
 
     private static function tidy(?string $value): string

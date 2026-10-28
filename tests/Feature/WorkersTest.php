@@ -127,3 +127,24 @@ it('puts the workers under Settings in the menu', function () {
 
     $this->get('/admin/workers')->assertOk()->assertSee('Settings')->assertSee('Workers');
 });
+
+it('ticks the modules a worker may use on a phone, every one for a worker registered before', function () {
+    $this->actingAs(farm(['modules' => ['kudde']]));
+    $old = worker('001');
+
+    // Null from before modules were chosen: shown as every module ticked.
+    Livewire::test(EditWorker::class, ['record' => $old->id])->assertFormSet(['modules' => ['kudde']])
+        ->fillForm(['modules' => []])->call('save')->assertHasNoFormErrors();
+    expect($old->refresh()->modules)->toBe([])->and($old->mayUse('kudde'))->toBeFalse();
+    $this->assertDatabaseHas('audit_log', ['action' => 'worker.updated', 'subject' => '001']);
+
+    Livewire::test(CreateWorker::class)->assertFormSet(['modules' => ['kudde']])
+        ->fillForm(['number' => '002', 'first_name' => 'Sipho'])->call('create')->assertHasNoFormErrors();
+    expect(Worker::query()->where('number', '002')->sole()->modules)->toBe(['kudde']);
+});
+
+it('asks nothing about phones while no module has screens on one', function () {
+    $this->actingAs(farm());
+
+    Livewire::test(CreateWorker::class)->assertFormFieldHidden('modules');
+});

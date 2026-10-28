@@ -7,9 +7,11 @@ use App\Filament\Resources\Workers\Pages\EditWorker;
 use App\Filament\Resources\Workers\Pages\ListWorkers;
 use App\Models\User;
 use App\Models\Worker;
+use App\Support\FieldSession;
 use BackedEnum;
 use Filament\Actions\BulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -108,6 +110,15 @@ class WorkerResource extends Resource
                         ->helperText(__('plaashek.workers.preferred_name_hint'))->maxLength(50),
                     TextInput::make('cell')->label(__('plaashek.workers.cell'))->tel()->maxLength(30),
                 ]),
+                // Which tiles the worker gets on a phone. A worker registered before this was asked has every
+                // module (null), so the box shows them all ticked until the office says otherwise.
+                CheckboxList::make('modules')->label(__('plaashek.workers.modules'))->helperText(__('plaashek.workers.modules_hint'))
+                    ->options(fn () => FieldSession::fieldModules())
+                    ->visible(fn () => FieldSession::fieldModules() !== [])
+                    ->default(fn () => array_keys(FieldSession::fieldModules()))
+                    ->afterStateHydrated(fn (CheckboxList $component, ?Worker $record) => $record !== null && $record->modules === null
+                        ? $component->state(array_keys(FieldSession::fieldModules())) : null)
+                    ->columns(3)->bulkToggleable(),
                 // Cropped square and shrunk in the browser before upload (~100 KB), because farm signal is
                 // slow and the photos share the hosting package's disk with every other farm.
                 FileUpload::make('photo')->label(__('plaashek.workers.photo'))

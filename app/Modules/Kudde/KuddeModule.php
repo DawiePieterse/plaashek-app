@@ -16,15 +16,11 @@ use App\Modules\Kudde\Reports\HeadCountReport;
 use App\Modules\Kudde\Reports\HerdRegister;
 use App\Modules\Kudde\Reports\TreatmentsReport;
 use App\Modules\Kudde\Reports\WeighingsReport;
-use App\Modules\Kudde\Support\FieldSession;
 use App\Modules\Kudde\Support\Herd;
 use App\Modules\Module;
 use App\Modules\ModuleTile;
 use App\Reports\Report;
-use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\RateLimiter;
 
 /**
  * Kudde (PLAN.md section 2.2), the first paid module: cattle recording for small farms, the animals and the
@@ -53,6 +49,11 @@ class KuddeModule extends Module
     public static function filamentResources(): array
     {
         return [AnimalResource::class, CampResource::class, SpeciesResource::class];
+    }
+
+    public static function fieldUrl(): ?string
+    {
+        return route('kudde.field', absolute: false);
     }
 
     public static function homeTile(): ?ModuleTile
@@ -89,12 +90,6 @@ class KuddeModule extends Module
     {
         $this->loadTranslationsFrom($this->modulePath('lang'), 'kudde');
         $this->loadViewsFrom($this->modulePath('views'), 'kudde');
-        $this->app['router']->aliasMiddleware('kudde.worker', FieldSession::class);
-
-        // Card scans have a limit of their own: a plain throttle:20,1 shares its counter with the API group's
-        // limit, so a phone's ordinary requests would use up the morning's scans. Numbers are short; this is
-        // what stops someone trying them all.
-        RateLimiter::for('kudde-sign-in', fn (Request $request) => Limit::perMinute(20)->by('kudde-sign-in|'.$request->ip()));
 
         if ($this->app->runningInConsole()) {
             $this->commands([StampWeather::class]);

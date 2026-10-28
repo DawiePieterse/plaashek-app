@@ -43,6 +43,8 @@ return [
         'version' => 'Die weergawe wat hierdie plaas gebruik',
     ],
     'workers' => [
+        'modules' => 'Op die foon',
+        'modules_hint' => 'Wat hierdie werker sien nadat hulle hul kaart skandeer.',
         'report' => 'Werkerregister',
         'active_only' => 'Werk hier',
         'inactive_only' => 'Het geloop',
@@ -94,6 +96,12 @@ return [
     'status' => [
         'online' => 'Aanlyn',
         'offline' => 'Vanlyn',
+    ],
+    'field' => [
+        'scan_card' => 'Skandeer jou kaart om voort te gaan',
+        'unknown_card' => 'Kaart :number is nie een van hierdie plaas se werkers nie',
+        'not_working_here' => ':name werk nie meer hier nie',
+        'not_allowed' => ':name mag dit nie op die foon gebruik nie. Vra die kantoor.',
     ],
     'devices' => [
         'title' => 'Fone',

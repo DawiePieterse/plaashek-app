@@ -46,6 +46,8 @@ class AppServiceProvider extends ServiceProvider
         Password::defaults(fn () => Password::min(8));
 
         // Pairing codes are eight characters from 31, open ten minutes: this keeps guessing them out of reach.
+        // Card scans: numbers are short, and this is what stops someone trying them all.
+        RateLimiter::for('field-sign-in', fn (Request $request) => Limit::perMinute(20)->by('field-sign-in|'.$request->ip()));
         RateLimiter::for('field-pair', fn (Request $request) => Limit::perMinute(10)->by('field-pair|'.$request->ip()));
 
         if ($this->app->runningInConsole()) {

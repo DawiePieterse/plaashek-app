@@ -46,14 +46,11 @@ Route::middleware(['web', 'module:kudde'])->prefix('kudde/field')->group(functio
     Route::get('/manifest.webmanifest', [Field::class, 'manifest'])->name('kudde.field.manifest');
 });
 
-// Its API: the same methods as the office's, behind the card session, less the office's corrections, camp
-// management and exports. No session cookie and no CSRF: the phone sends its token as a Bearer header.
+// Its API: the same methods as the office's, behind a worker's card session on a paired phone (the core's
+// field.worker, at /field/api/sign-in), less the office's corrections, camp management and exports. No session
+// cookie and no CSRF: the phone sends its own tokens.
 Route::middleware([SetFarmLocale::class, 'module:kudde', 'throttle:600,1'])->prefix('kudde/field/api')->name('kudde.field.api.')->group(function () {
-    Route::post('/sign-in', [Field::class, 'signIn'])->middleware('throttle:kudde-sign-in')->name('sign-in');
-    Route::delete('/sign-in', [Field::class, 'signOut'])->name('sign-out');
-
-    Route::middleware('kudde.worker')->group(function () {
-        Route::get('/workers', [Field::class, 'workers'])->name('workers');
+    Route::middleware('field.worker:kudde')->group(function () {
         Route::get('/animals', [Api::class, 'animals'])->name('animals');
         Route::post('/animals', [Api::class, 'storeAnimal'])->name('animals.store');
         Route::get('/animals/{tag}/events', [Api::class, 'animalEvents'])->name('animal.events');

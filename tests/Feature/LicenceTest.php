@@ -65,9 +65,9 @@ it('lets a suspended herd be read and exported, but saves nothing, from the offi
     expect(AnimalResource::mayCorrect())->toBeFalse();
 
     Worker::query()->create(['number' => '001', 'first_name' => 'Jan', 'last_name' => 'Mathebula']);
-    $token = $this->postJson('/kudde/field/api/sign-in', ['number' => '001'])->assertOk()->json('token');
+    $phone = pairPhone();
     $this->postJson('/kudde/field/api/events', ['tag' => 'A1', 'kind' => 'weight', 'event_date' => recently(), 'value' => 300],
-        ['Authorization' => "Bearer {$token}"])->assertStatus(423);
+        phoneHeaders($phone, scanOn($phone, '001')))->assertStatus(423);
 
     $this->artisan('farm:licence', ['module' => 'kudde', 'status' => 'active'])->assertSuccessful();
     registry();

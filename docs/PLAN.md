@@ -155,7 +155,7 @@ on Bronze Pro), and the Open-Meteo commercial plan from the first paying farm (c
 - [ ] One office tab per enabled module, plus the Settings group (§5)
 - [x] Phones paired by the office, the devices page (Settings → Phones), disable a phone (§5.1; card scan instead
   of field users and PINs, owner's call)
-- [ ] Card sign-in in the core on a paired phone, modules per worker; disable a person (§5.1)
+- [x] Card sign-in in the core on a paired phone, modules per worker; disable a person (§5.1)
 - [ ] Field PWA shell: sign-in, change user, home screen with one tile per enabled module, the outbox and sync (§7)
 - [x] **Worker register, minimal** (owner's call, 25 October 2026), under Farm settings: number, first names,
   surname, known-as, cell, photo, active; and the 58 × 78 mm cards whose QR holds the number (Boord's layout,

@@ -393,6 +393,12 @@
   <div id="signinFarm" class="text-sm opacity-80 mb-1"></div>
   <div id="signinTitle" class="text-2xl font-bold mb-2"></div>
   <div id="signinHint" class="text-sm opacity-90 max-w-xs mb-6"></div>
+  {{-- A phone the office has not paired yet: the code from Settings, Phones (or the QR, which fills it in). --}}
+  <form id="pairForm" class="hidden w-full max-w-xs flex-col gap-3" autocomplete="off">
+    <input id="pairCode" type="text" inputmode="text" autocapitalize="characters" maxlength="12"
+           class="w-full rounded-2xl py-4 px-4 text-2xl font-bold text-center tracking-widest" style="color:#0A2F6B">
+    <button id="pairBtn" type="submit" class="w-full rounded-2xl py-4 text-xl font-bold bg-white" style="color:#0A2F6B"></button>
+  </form>
   <button id="signinScanBtn" type="button" class="w-full max-w-xs rounded-2xl py-5 text-xl font-bold bg-white" style="color:#0A2F6B">
     <i class="fa-solid fa-qrcode"></i> <span id="signinScanLabel"></span>
   </button>
