@@ -153,7 +153,9 @@ on Bronze Pro), and the Open-Meteo commercial plan from the first paying farm (c
 - [x] Settings: licence status and dates (Farm settings, shown not edited: Plaashek sets them)
 - [x] Modules switched on per farm (`farm:modules`), each with its own licence status (`farm:licence`)
 - [ ] One office tab per enabled module, plus the Settings group (§5)
-- [ ] Field users with username/cell + PIN, the devices page, disable a person or a phone (§5)
+- [x] Phones paired by the office, the devices page (Settings → Phones), disable a phone (§5.1; card scan instead
+  of field users and PINs, owner's call)
+- [ ] Card sign-in in the core on a paired phone, modules per worker; disable a person (§5.1)
 - [ ] Field PWA shell: sign-in, change user, home screen with one tile per enabled module, the outbox and sync (§7)
 - [x] **Worker register, minimal** (owner's call, 25 October 2026), under Farm settings: number, first names,
   surname, known-as, cell, photo, active; and the 58 × 78 mm cards whose QR holds the number (Boord's layout,
@@ -584,6 +586,30 @@ on that phone needs signal the first time.
 - The devices page shows each phone's label, last user and last sync.
 - A phone holds one farm. Signing it into another farm is allowed only after its outbox is empty.
 
+### 5.1 Phones and card scans (owner's call, 25 October 2026: replaces field users and PINs)
+
+The card scan stays: workers never get usernames or PINs. What the plan gave field users moves to the worker and
+the phone instead.
+
+- **A phone is paired by the office.** On the devices page (Settings) an owner or manager names the phone and
+  shows a pairing code (QR and 8 characters, one use, 10 minutes). The phone opens `/field`, scans or types it,
+  and keeps a long-lived device token. A card scan works only on a paired phone, so a printed card alone is no
+  longer enough to capture.
+- **The worker's day rides on the phone's token:** the card scan opens a session until the farm's midnight on that
+  phone. "Not you?" hands it over. Every record names the worker and the phone.
+- **Modules per worker:** the worker register gets the modules each worker may use (ticked in the office). The
+  home screen shows a tile for a module that is on for the farm **and** ticked for the worker signed in.
+- **The devices page** shows each phone's name, last worker and last sync; a phone is disabled there (its token is
+  refused at the next request, its cached worker list cleared). A worker is disabled by making them inactive.
+  Records captured offline before either are still accepted and flagged for the office.
+- **21-day window:** a phone with no successful sync for 21 days turns read-only ("Gaan na die hek vir sein").
+- **One app at `/field`:** card scan, home tiles, one outbox; Weather and Kudde's screens inside it. `/weer` and
+  `/kudde/field` send a phone there.
+
+Build order: (1) devices and pairing, (2) card sign-in in the core on a paired phone, with modules per worker,
+(3) the `/field` shell with tiles, outbox and sync, (4) Kudde and Weather moved in, (5) disable and the 21-day
+window, (6) the field browser test (capture offline, sync, office sees it).
+
 **Kudde's field app is opened by a worker's card scan alone** (owner's call, 25 October 2026), ahead of the
 field users and PINs above. **Accepted risk:** the card's QR holds only the worker number, so anyone who can
 print a QR of a valid number can capture on Kudde until midnight. Limits: every record names the worker, an
@@ -690,7 +716,7 @@ Same checks as BowlsBuddy, in CI on every push:
 | 4 | Kudde domain: animals, events, calvings, derived herd state; Pest port of the old tests | Old Kudde's cases pass | 1½–2 weeks |
 | 4b | Livestock types: species in Settings with their rules, tags per species, births with several young, pig litters tagged at weaning, species in the field app and export | A farm with cattle and sheep captures both, each counted in its own classes | 1½ weeks |
 | 5 | Kudde office tab: dashboard, herd, animal page, corrections, export; licence commands | The office's whole day passes as a browser test (`tests/e2e/office.e2e.js`, built 25 October 2026) | 1–1½ weeks |
-| 6 | Field: field-user sign-in, PIN switch offline, devices page, PWA shell and home tiles (Weather moves in), outbox, disable, 21-day window, Kudde screens | Offline capture → sync → office sees it, in Playwright | 2 weeks |
+| 6 | Field (§5.1, card scan kept): phones paired by the office and the devices page, card sign-in in the core, modules per worker, the `/field` shell with home tiles (Weather and Kudde move in), one outbox, disable a phone or a person, 21-day window | Offline capture → sync → office sees it, in Playwright | 2 weeks |
 | 7 | Photos, herds and breeding, lineage (pedigree, offspring, sire suggestion, inbreeding warning), backups, importer | A farm-PC Kudde imports cleanly | 1½ weeks |
 | 8 | Bekfontein live on Kudde, order-form text | One real farm live on Kudde for a month | ½ week + trial |
 | 9 | Werkers register: SA ID check, rates, encryption and the Payroll permission, photos, card print, field scan, register CSV, worker privacy notice | Bekfontein's workers registered (imported from Boord's register by number), cards printed and scanned | 2 weeks |
