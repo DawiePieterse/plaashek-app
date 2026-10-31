@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Plaashek Harvest</title>
+<style>
+  @page { size: A4; margin: 14mm 14mm 16mm 14mm; }
+  :root { --navy:#0b2e63; --ink:#1e293b; --muted:#64748b; --line:#e2e8f0; --tint:#f1f5f9; --green:#16a34a; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Inter, Helvetica, Arial, sans-serif; color: var(--ink); margin: 0; font-size: 10.5pt; line-height: 1.45; }
+  h1, h2, h3 { color: var(--navy); margin: 0; }
+  .cover { height: 262mm; display: flex; flex-direction: column; justify-content: space-between; page-break-after: always; }
+  .cover .brand { font-size: 44pt; font-weight: 800; letter-spacing: -0.5px; }
+  .cover .sub { font-size: 20pt; color: var(--muted); margin-top: 6px; }
+  .cover .tag { margin-top: 28px; font-size: 13pt; max-width: 150mm; }
+  .cover .band { background: var(--navy); color: #fff; padding: 20px 24px; border-radius: 12px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+  .cover .band div b { display: block; font-size: 12.5pt; margin-bottom: 3px; }
+  .cover .band div { font-size: 9.5pt; line-height: 1.4; opacity: 0.95; }
+  .cover .foot { color: var(--muted); font-size: 9pt; }
+  section { page-break-before: always; }
+  section.flow { page-break-before: auto; }
+  .kicker { text-transform: uppercase; letter-spacing: 1.5px; font-size: 8.5pt; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+  h2 { font-size: 20pt; margin-bottom: 4px; }
+  h3 { font-size: 13pt; margin: 14px 0 4px; }
+  p.lead { font-size: 11.5pt; color: #334155; margin: 0 0 10px; max-width: 165mm; }
+  .screens { display: grid; gap: 10px; margin: 10px 0 6px; }
+  .screens.two { grid-template-columns: 1fr 1fr; }
+  .screens.tablets { grid-template-columns: 1fr 1fr; }
+  figure { margin: 0; break-inside: avoid; }
+  figure img { width: 100%; display: block; border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 2px 8px rgba(15,23,42,0.08); }
+  figcaption { font-size: 8.5pt; color: var(--muted); margin-top: 4px; }
+  .tablets img { max-height: 148mm; width: auto; margin: 0 auto; }
+  ul.feat { margin: 6px 0 0; padding-left: 0; list-style: none; columns: 2; column-gap: 24px; }
+  ul.feat li { break-inside: avoid; margin-bottom: 6px; padding-left: 16px; position: relative; font-size: 9.8pt; }
+  ul.feat li::before { content: ""; position: absolute; left: 0; top: 7px; width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+  ul.feat li b { color: var(--navy); }
+  .roles { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 14px; }
+  .role { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; background: var(--tint); }
+  .role b { display: block; color: var(--navy); font-size: 12pt; margin-bottom: 4px; }
+  .role span { font-size: 9.5pt; color: #334155; }
+  .flowline { display: flex; align-items: center; gap: 8px; margin: 18px 0 4px; font-weight: 600; color: var(--navy); font-size: 10.5pt; flex-wrap: wrap; }
+  .flowline .step { background: #fff; border: 1.5px solid var(--navy); border-radius: 999px; padding: 4px 12px; }
+  .flowline .arrow { color: var(--muted); }
+  .note { background: var(--tint); border-left: 4px solid var(--navy); padding: 8px 12px; border-radius: 6px; font-size: 9.5pt; margin-top: 10px; }
+  .footer { position: running(footer); }
+  table.spec { border-collapse: collapse; width: 100%; font-size: 9.5pt; margin-top: 10px; }
+  table.spec td { padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.spec td:first-child { width: 38mm; font-weight: 600; color: var(--navy); }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div>
+    <div class="kicker">Product overview</div>
+    <div class="brand">Plaashek</div>
+    <div class="sub">Harvest: field capture, receiving and picker pay</div>
+    <div class="tag">Every crate picked, weighed and paid for. Plaashek Harvest runs the picking season from the orchard to the pack-house gate to the wage sheet, on devices that keep working where there is no signal. It works for any crop that workers pick by hand: litchis, mangoes, avocados, citrus, macadamias, table grapes, stone fruit, apples and pears, berries, tomatoes and peppers.</div>
+  </div>
+  <div class="band">
+    <div><b>Field</b>Tablets at the picking stations: scan the worker's badge, type the crate weight, send the load.</div>
+    <div><b>Pack house</b>The gate screen: every load on its way, oldest first, checked in with a count and a condition.</div>
+    <div><b>Admin</b>The office: live dashboard, wage runs, reports, the week's harvest plan and the master data.</div>
+  </div>
+  <div class="foot">Hosted in South Africa at yourfarm.plaashek.co.za. All screens in this document show demonstration data; names, blocks and figures are invented.</div>
+</div>
+
+<section>
+  <div class="kicker">How it fits together</div>
+  <h2>One system, three screens</h2>
+  <p class="lead">Each device is set up once with its role and then only ever shows that role's screen. The office signs in with its own login; field and pack-house tablets are paired to the farm once and need no password after that.</p>
+  <div class="roles">
+    <div class="role"><b>Field</b><span>Crate capture at the picking station. Works fully offline and syncs the moment the tablet sees the server again.</span></div>
+    <div class="role"><b>Pack house</b><span>Receiving at the gate. Shows what is in transit and how long it has been on the road, and records what actually arrived.</span></div>
+    <div class="role"><b>Admin</b><span>The office. Dashboard, payments, reports, planner and settings, on a PC or a phone.</span></div>
+  </div>
+  <div class="flowline">
+    <span class="step">Scan badge</span><span class="arrow">&rarr;</span>
+    <span class="step">Weigh crate</span><span class="arrow">&rarr;</span>
+    <span class="step">Send picking slip</span><span class="arrow">&rarr;</span>
+    <span class="step">Receive at the gate</span><span class="arrow">&rarr;</span>
+    <span class="step">Dashboard &amp; reports</span><span class="arrow">&rarr;</span>
+    <span class="step">Wage sheet</span>
+  </div>
+  <div class="screens tablets" style="grid-template-columns: 1fr 1.6fr; align-items: start; margin-top: 16px;">
+    <figure style="max-width:72mm"><img src="shots/setup-01-device-card.png" alt="Device setup" style="width:100%;max-height:none"><figcaption>Device setup. Pick this device's station once; it remembers it.</figcaption></figure>
+    <div>
+      <h3>Built for a working farm</h3>
+      <ul class="feat" style="columns: 1;">
+        <li><b>Any hand-picked crop.</b> Litchis, mangoes, avocados, citrus, macadamias, table grapes, stone fruit, pome fruit, berries or vegetables: if workers fill crates, bags or lugs and are paid by weight or count, Plaashek fits. Blocks, varieties and the pay rate are the farm's own.</li>
+        <li><b>Offline first.</b> A crate is saved on the tablet the instant it is captured. No signal in the orchard changes nothing.</li>
+        <li><b>Badge scan, not a dropdown.</b> Workers are identified by the QR code on their printed badge, so a crate can never land on the wrong name.</li>
+        <li><b>Colour tells the time.</b> Loads turn from green to amber to red the longer they wait, in the field, at the gate and on the dashboard.</li>
+        <li><b>Own fruit and bought-in fruit.</b> Outside suppliers' crews and deliveries are recorded alongside the farm's own, and paid or billed separately.</li>
+        <li><b>Hosted in South Africa.</b> Your farm lives at <b>yourfarm.plaashek.co.za</b> on a South African hosting service, so the data stays in the country, encrypted in transit and at rest, and backed up every day. Nothing to install or look after on a farm PC.</li>
+        <li><b>Apple or Android.</b> Plaashek runs in the browser on iPhone, iPad and Android phones and tablets, and installs to the home screen like an app. See Devices on the next page.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+
+<section>
+  <div class="kicker">Devices</div>
+  <h2>Works on Apple and Android</h2>
+  <p class="lead">There is nothing to install from an app store. Each screen opens in the browser on an iPhone, iPad or any Android phone or tablet, and is added to the home screen once so it opens full screen like an app. The office uses whatever PC, Mac or phone it already has.</p>
+
+  <h3>Recommended field devices: Ulefone RugKing 3 Pro and RugKing 4 Pro</h3>
+  <p class="lead" style="font-size:10.5pt">For the picking stations we recommend a rugged Android phone rather than a consumer tablet. The RugKing fits one hand, its camera reads the worker badges, it lasts a full day of picking, and it shrugs off dust, rain and the drops a tablet does not survive. Both are low-cost devices, so losing one is not a disaster.</p>
+
+  <table class="spec" style="margin-top:12px">
+    <tr><td></td><td style="font-weight:600;color:var(--navy)">RugKing 3 Pro</td><td style="font-weight:600;color:var(--navy)">RugKing 4 Pro</td></tr>
+    <tr><td>Best for</td><td>The slimmer, lighter choice for an induna who carries it all day.</td><td>The long-shift choice: a battery that lasts two days of capture without a charger.</td></tr>
+    <tr><td>Screen</td><td colspan="2">6.56-inch HD+ display at 120 Hz, Corning Gorilla Glass 3. Big enough for the keypad, readable in sunlight.</td></tr>
+    <tr><td>Toughness</td><td colspan="2">IP68 and IP69K water and dust sealing (submersion and pressure washing), MIL-STD-810H drop and shock rating.</td></tr>
+    <tr><td>Battery</td><td>5 700 mAh, about a full day of capture.</td><td>10 200 mAh, two days of capture; 18 W charging.</td></tr>
+    <tr><td>Processor and memory</td><td>Unisoc T7250 octa-core, 8 GB RAM, 128 GB storage.</td><td>Unisoc T7250 octa-core, 8 GB RAM, 256 GB storage.</td></tr>
+    <tr><td>Camera</td><td colspan="2">48 MP rear camera with autofocus, which is what reads the worker's QR badge in a fraction of a second.</td></tr>
+    <tr><td>Connectivity</td><td colspan="2">4G LTE with dual SIM, Wi-Fi, GPS, NFC and Bluetooth. Capture carries on with no signal and syncs when the phone finds the network again.</td></tr>
+    <tr><td>Software</td><td colspan="2">Android 15.</td></tr>
+    <tr><td>Weight</td><td>286 g, 12.9 mm thin.</td><td>405 g, the weight of the bigger battery.</td></tr>
+  </table>
+
+  <ul class="feat" style="margin-top:14px">
+    <li><b>Any phone works.</b> The RugKings are a recommendation, not a requirement. A farm that already has tablets or phones can use them as they are.</li>
+    <li><b>Pack house and office.</b> The receiving screen runs on a tablet or phone at the gate; the office uses a PC, laptop or phone browser.</li>
+    <li><b>One address.</b> Every device opens yourfarm.plaashek.co.za and picks its role once.</li>
+    <li><b>Badges, not logins.</b> A field phone is paired to the farm once; workers identify themselves with their printed badge.</li>
+  </ul>
+  <div class="note">Specifications as published by the manufacturer at the time of writing. Check the current model before buying.</div>
+</section>
+
+<section>
+  <div class="kicker">Field</div>
+  <h2>Crate capture at the picking station</h2>
+  <p class="lead">The induna's tablet. Scan the picker's badge, type the weight on the big keypad, save. The load card at the top counts crates and kilograms and shows how long the load has been standing.</p>
+  <div class="screens tablets">
+    <figure><img src="shots/field-01-capture.png" alt="Field capture"><figcaption>Capture: worker scanned, weight typed, five crates already on this load.</figcaption></figure>
+    <figure><img src="shots/field-02-send-slip.png" alt="Send picking slip"><figcaption>Send Picking Slip: the load goes to the pack house with the driver's name.</figcaption></figure>
+  </div>
+  <ul class="feat">
+    <li><b>Saves before it syncs.</b> Every crate is written to the tablet first and sent in the background. The pill in the header shows synced, syncing or offline with the number still pending.</li>
+    <li><b>One-handed keypad.</b> Large keys, a decimal point and backspace. Undo takes back the last crate.</li>
+    <li><b>Block picker.</b> The block being picked is chosen once and stays until it is changed.</li>
+    <li><b>Split loads.</b> If the truck cannot take everything, send part of the load; the rest rolls onto a new slip automatically.</li>
+    <li><b>Recent crates and today's loads</b> stay on screen so the induna can check what has gone.</li>
+    <li><b>Elapsed clock.</b> The load card changes colour as the crates wait, so the team sees for themselves when a load should go.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="kicker">Pack house</div>
+  <h2>Receiving at the gate</h2>
+  <p class="lead">Every load on its way is a card, oldest first, coloured by how long it has been in transit. Tap one to check it in with the actual crate count, the fruit's condition and who received it.</p>
+  <div class="screens tablets">
+    <figure><img src="shots/packhouse-01-queue.png" alt="Receiving queue"><figcaption>The in-transit queue, with the loads already accepted today below it.</figcaption></figure>
+    <figure><img src="shots/packhouse-02-receive.png" alt="Receive a load"><figcaption>Receive: expected against actual, condition ticks, notes and the receiver's name.</figcaption></figure>
+  </div>
+  <ul class="feat">
+    <li><b>Expected vs received.</b> The slip's crate count is shown read-only beside what actually arrived, so shortfalls are recorded, not argued about later.</li>
+    <li><b>Condition at a glance.</b> Good, damaged, sunburn, wet or other, any combination.</li>
+    <li><b>External deliveries.</b> Fruit from another farmer is logged at the gate with supplier, crates, kilograms and driver, and flows into the same queue.</li>
+    <li><b>Received once only.</b> A load cannot be checked in twice, however many times a button is tapped or a slip is re-sent.</li>
+    <li><b>Keeps its last list offline.</b> If the Wi-Fi drops, the screen keeps showing the last queue it loaded, marked with its age.</li>
+    <li><b>Feeds the office.</b> The receiving time and count are what the dashboard and reports call "received".</li>
+  </ul>
+</section>
+
+<section>
+  <div class="kicker">Admin</div>
+  <h2>Dashboard</h2>
+  <p class="lead">The office's landing screen: the whole farm for any period, with one filter bar. Today, this week, the season or any dates, for all suppliers or one.</p>
+  <figure><img src="shots/admin-01-dashboard.png" alt="Dashboard"><figcaption>This week at a glance: teams, workers and blocks active, kilograms and crates, averages, and what is still harvesting or in transit.</figcaption></figure>
+  <ul class="feat">
+    <li><b>Live KPI cards</b> for the chosen period: total kg and crates, average kg per slip and per crate, loads harvesting and in transit.</li>
+    <li><b>Five drill-down lists.</b> Harvesting, in transit, received, workers and blocks, each collapsed to its total until tapped.</li>
+    <li><b>Correct a crate.</b> Open a received load to see its crates and fix a wrong worker or weight, with the change recorded.</li>
+    <li><b>Per block yields.</b> Kilograms per tree and per hectare, from the block register.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="kicker">Admin</div>
+  <h2>Dashboard: workers and blocks</h2>
+  <p class="lead">Expanding a list shows the detail rows. Workers are ranked by kilograms picked with the amount they have earned; blocks show their yield per tree and per hectare.</p>
+  <figure><img src="shots/admin-02-dashboard-lists.png" alt="Dashboard lists" style="max-height: 215mm; width: auto; margin: 0 auto;"><figcaption>The Workers and Blocks lists open for the week.</figcaption></figure>
+</section>
+
+<section>
+  <div class="kicker">Admin</div>
+  <h2>Payments</h2>
+  <p class="lead">Picker pay per kilogram, calculated from the crates captured in the field. Pick the period, press Calculate Wages, and export the wage sheet.</p>
+  <figure><img src="shots/admin-03-payments.png" alt="Payments"><figcaption>The week's wage run, grouped by supplier with a subtotal for each.</figcaption></figure>
+  <ul class="feat">
+    <li><b>Rate per kg,</b> or tiered rates, set in Settings and dated so the history stays right.</li>
+    <li><b>Grouped by supplier.</b> The farm's own pickers and each outside crew have their own subtotal.</li>
+    <li><b>Export to Excel</b> for the payroll office, in the same layout.</li>
+    <li><b>Never a R0 wage sheet.</b> The run refuses to calculate without a rate, rather than printing zeros.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="kicker">Admin</div>
+  <h2>Reports</h2>
+  <p class="lead">Every paper form the pack house used to fill in by hand, produced from the data already captured. One click downloads an Excel file for the chosen period.</p>
+  <figure><img src="shots/admin-04-reports.png" alt="Reports" style="max-height: 205mm; width: auto; margin: 0 auto;"><figcaption>The report catalogue: harvesting, pack house, markets and transport, plus the training guides.</figcaption></figure>
+  <ul class="feat">
+    <li><b>Harvesting:</b> daily harvest summary, picking notes, team picking lists, daily harvest data, block and worker reports, wages.</li>
+    <li><b>Pack house:</b> in-transit list, lot and receiving report, receivables, pallets stacked, delivery notes.</li>
+    <li><b>Markets and transport:</b> sales per receiver, market and package type, consignment sales, transport cost, sold and unsold.</li>
+    <li><b>Afrikaans and English</b> names on the forms the farm already knows.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="kicker">Admin</div>
+  <h2>Planner</h2>
+  <p class="lead">The week's harvest plan. Tick the blocks to pick and the days, type what is available, and the plan spreads the kilograms across the days. What was actually picked shows in red under each day as the week runs.</p>
+  <figure><img src="shots/admin-05-planner.png" alt="Planner"><figcaption>Week 44 planned: three blocks on, kilograms shared over the ticked days, grand totals below.</figcaption></figure>
+  <ul class="feat">
+    <li><b>Plan against actual.</b> Picked figures appear under the day they were picked, planned or not.</li>
+    <li><b>Hold a day's figure.</b> Type a number on a day and the rest is re-shared around it.</li>
+    <li><b>Season estimate and deliveries</b> join the plan when the owner's crop estimate and the pack-house modules are installed.</li>
+    <li><b>Excel and PDF</b> of the week's plan for the morning meeting.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="kicker">Admin</div>
+  <h2>Master data</h2>
+  <p class="lead">Workers, teams, blocks, devices and suppliers live in Settings. Each list imports and exports as a spreadsheet, so the season's register is set up in minutes.</p>
+  <figure><img src="shots/admin-06-workers.png" alt="Workers"><figcaption>Workers: the register with supplier, active flag, photo and QR badge.</figcaption></figure>
+  <div class="screens two" style="margin-top: 10px;">
+    <figure><img src="shots/admin-07-blocks.png" alt="Blocks"><figcaption>Blocks: variety, trees and hectares, which drive the yield figures.</figcaption></figure>
+    <figure><img src="shots/admin-08-devices.png" alt="Devices"><figcaption>Devices: each tablet's role, station, team and when it last synced.</figcaption></figure>
+  </div>
+</section>
+
+<section>
+  <div class="kicker">Admin</div>
+  <h2>Worker badges</h2>
+  <p class="lead">Print a badge for any worker, a filtered list or everyone. The QR code is what the field tablet scans, and the same badge works at the pack-house time clock.</p>
+  <figure><img src="shots/admin-09-badges.png" alt="Badges" style="max-width: 170mm; margin: 0 auto;"><figcaption>Badges sized for standard ID card holders, with the worker's photo when one is on file.</figcaption></figure>
+  <h3>Also included</h3>
+  <table class="spec">
+    <tr><td>Hosting and data</td><td>Each farm has its own address, <b>yourfarm.plaashek.co.za</b>, and its own database on a South African hosting service. Data is encrypted in transit and at rest, backed up daily, and never shared between farms.</td></tr>
+    <tr><td>Markets</td><td>With the pack-house module, delivery notes come through to the Markets tab, where the market's statement and the transporter's invoice are typed in, or read automatically from the agents' emailed invoices.</td></tr>
+    <tr><td>Weather</td><td>Current conditions in the header from the farm's weather station or its GPS position.</td></tr>
+    <tr><td>Updates</td><td>New releases are rolled out on the hosting service; there is nothing for the farm to install. Each screen shows the version it is running.</td></tr>
+    <tr><td>Training</td><td>A training guide per role (Field, Pack House, Admin) and a full manual, opened from the Reports tab.</td></tr>
+  </table>
+  <div class="note">Plaashek Harvest is one module of the Plaashek suite. The pack-house, time-clock, owner's view, cattle and farm-notes modules each follow in their own section.</div>
+</section>
+
+</body>
+</html>

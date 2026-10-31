@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Plaashek Packhouse</title>
+<style>
+  @page { size: A4; margin: 14mm 14mm 16mm 14mm; }
+  :root { --navy:#0b2e63; --ink:#1e293b; --muted:#64748b; --line:#e2e8f0; --tint:#f1f5f9; --green:#16a34a; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Inter, Helvetica, Arial, sans-serif; color: var(--ink); margin: 0; font-size: 10.5pt; line-height: 1.45; }
+  h1, h2, h3 { color: var(--navy); margin: 0; }
+  .cover { height: 262mm; display: flex; flex-direction: column; justify-content: space-between; page-break-after: always; }
+  .cover .brand { font-size: 44pt; font-weight: 800; letter-spacing: -0.5px; }
+  .cover .sub { font-size: 20pt; color: var(--muted); margin-top: 6px; }
+  .cover .tag { margin-top: 28px; font-size: 13pt; max-width: 150mm; }
+  .cover .band { background: var(--navy); color: #fff; padding: 20px 24px; border-radius: 12px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+  .cover .band div b { display: block; font-size: 12.5pt; margin-bottom: 3px; }
+  .cover .band div { font-size: 9.5pt; line-height: 1.4; opacity: 0.95; }
+  .cover .foot { color: var(--muted); font-size: 9pt; }
+  section { page-break-before: always; }
+  section.flow { page-break-before: auto; }
+  .kicker { text-transform: uppercase; letter-spacing: 1.5px; font-size: 8.5pt; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+  h2 { font-size: 20pt; margin-bottom: 4px; }
+  h3 { font-size: 13pt; margin: 14px 0 4px; }
+  p.lead { font-size: 11.5pt; color: #334155; margin: 0 0 10px; max-width: 165mm; }
+  .screens { display: grid; gap: 10px; margin: 10px 0 6px; }
+  .screens.two { grid-template-columns: 1fr 1fr; }
+  .screens.tablets { grid-template-columns: 1fr 1fr; }
+  figure { margin: 0; break-inside: avoid; }
+  figure img { width: 100%; display: block; border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 2px 8px rgba(15,23,42,0.08); }
+  figcaption { font-size: 8.5pt; color: var(--muted); margin-top: 4px; }
+  .tablets img { max-height: 148mm; width: auto; margin: 0 auto; }
+  ul.feat { margin: 6px 0 0; padding-left: 0; list-style: none; columns: 2; column-gap: 24px; }
+  ul.feat li { break-inside: avoid; margin-bottom: 6px; padding-left: 16px; position: relative; font-size: 9.8pt; }
+  ul.feat li::before { content: ""; position: absolute; left: 0; top: 7px; width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+  ul.feat li b { color: var(--navy); }
+  .roles { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 14px; }
+  .role { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; background: var(--tint); }
+  .role b { display: block; color: var(--navy); font-size: 12pt; margin-bottom: 4px; }
+  .role span { font-size: 9.5pt; color: #334155; }
+  .flowline { display: flex; align-items: center; gap: 8px; margin: 18px 0 4px; font-weight: 600; color: var(--navy); font-size: 10.5pt; flex-wrap: wrap; }
+  .flowline .step { background: #fff; border: 1.5px solid var(--navy); border-radius: 999px; padding: 4px 12px; }
+  .flowline .arrow { color: var(--muted); }
+  .note { background: var(--tint); border-left: 4px solid var(--navy); padding: 8px 12px; border-radius: 6px; font-size: 9.5pt; margin-top: 10px; }
+  .footer { position: running(footer); }
+  table.spec { border-collapse: collapse; width: 100%; font-size: 9.5pt; margin-top: 10px; }
+  table.spec td { padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.spec td:first-child { width: 38mm; font-weight: 600; color: var(--navy); }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div>
+    <div class="kicker">Product overview</div>
+    <div class="brand">Plaashek</div>
+    <div class="sub">Packhouse: from the receiving dock to the truck</div>
+    <div class="tag">Everything that happens to the fruit after it is checked in, until a pallet or a juice bin leaves on a truck: sulfur tents, acid baths, pallet stacking, delivery notes and export paperwork, on the phones and tablets the floor already carries. And any other process that happens in your pack house can be added as a screen of its own.</div>
+  </div>
+  <div class="band">
+    <div><b>Treatment</b>Sulfur tent and acid bath timers with a suggested dose and time, overrun alarms and the daily sulfur log.</div>
+    <div><b>Pallet Stack</b>Scan each pallet's label, record what is on it, and see the day grouped by market.</div>
+    <div><b>Delivery and juice</b>Tick pallets onto a delivery note, print or share it, and weigh juice bins onto their own note.</div>
+  </div>
+  <div class="foot">Hosted in South Africa at yourfarm.plaashek.co.za. All screens in this document show demonstration data; names, blocks and figures are invented.</div>
+</div>
+
+<section>
+  <div class="kicker">How it fits together</div>
+  <h2>The fruit's route through the pack house</h2>
+  <p class="lead">Plaashek Packhouse picks up where Plaashek Harvest's receiving screen leaves off. The blocks, suppliers and workers come straight from Harvest, so nothing is typed twice, and every record names the worker whose badge opened the screen.</p>
+  <div class="flowline">
+    <span class="step">Received</span><span class="arrow">&rarr;</span>
+    <span class="step">Sulfur tent</span><span class="arrow">&rarr;</span>
+    <span class="step">Acid bath</span><span class="arrow">&rarr;</span>
+    <span class="step">Pack</span><span class="arrow">&rarr;</span>
+    <span class="step">Pallet Stack</span><span class="arrow">&rarr;</span>
+    <span class="step">Delivery note</span><span class="arrow">&rarr;</span>
+    <span class="step">Truck</span>
+  </div>
+  <figure style="margin-top:14px"><img src="shots-ph/home-01.png" alt="Home screen"><figcaption>Home: one big tile per process, with what is running on it right now. A farm switches on the ones it uses, and any other pack-house step is added as its own tile.</figcaption></figure>
+  <div class="screens" style="grid-template-columns: 1fr 1.1fr; align-items:start; margin-top:12px">
+    <figure><img src="shots-ph/scan-01-badge-c.png" alt="Badge scan"><figcaption>Every floor screen opens with a worker's badge scan, the same badge the field uses.</figcaption></figure>
+    <div>
+      <h3 style="margin-top:0">Built for a pack-house floor</h3>
+      <ul class="feat" style="columns:1">
+    <li><b>Works on Apple and Android.</b> Tablets for the tents and baths, phones for pallets and delivery notes. Nothing to install from an app store.</li>
+    <li><b>Offline on patchy Wi-Fi.</b> A run, batch, pallet or note is saved on the device first and sent when the signal is back. Two tablets never fight over a record.</li>
+    <li><b>Badges, not logins.</b> A scan of the worker's badge signs them in for the shift. "Who did this" is on every record.</li>
+    <li><b>Settings behind a PIN.</b> The floor screens have no password; the lists, numbers and backups are behind a four-digit PIN that signs out when the tablet is left.</li>
+    <li><b>Harvest's data, read only.</b> Blocks, varieties, bought-in suppliers and the day's received lots are offered where they are needed, never retyped.</li>
+    <li><b>Your process, your screen.</b> Sulfur, acid, pallets, delivery notes and juice are the steps one pack house needed. A grading line, cold store, pre-pack, fumigation or any other step in your pack house can be added as a screen of its own, with the same badge sign-in, offline capture and reports.</li>
+    <li><b>Hosted in South Africa</b> at yourfarm.plaashek.co.za, with daily backups.</li>
+  </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="kicker">Treatment</div>
+  <h2>Sulfur tent</h2>
+  <p class="lead">One card per tent. Load the grams, crates, fruit and size, press Start, and the tablet counts down. A tent left too long sounds an alarm on every screen in the pack house.</p>
+  <figure><img src="shots-ph/sulfur-01-tents-c.png" alt="Sulfur tents" style="max-height:125mm;width:auto;margin:0 auto"><figcaption>Tent A ready to load with a suggested time and the SO₂ estimate; Tent B running with its countdown and batch number.</figcaption></figure>
+  <ul class="feat">
+    <li><b>Suggested time.</b> A transparent starting rule the farm tunes: the tent's default time, scaled by fruit per gram, today's weather and the variety. The operator always sees why, and can step it up or down.</li>
+    <li><b>Aril SO₂ estimate.</b> Shown live against the EU limit, amber from 8 ppm and red from 10, and marked "not calibrated" until a lab result is entered.</li>
+    <li><b>Batch number on every run.</b> Tent, date code, time, blocks and a short id, printed on the daily log and carried to the acid bath and the pallet.</li>
+    <li><b>Fruit from Harvest.</b> The fruit picker offers today's received blocks and suppliers, with a second block for a mixed load.</li>
+    <li><b>Overrun alarm.</b> The screen stays awake while a tent runs and sounds when a tent is overdue, on the sulfur screen and the home screen.</li>
+    <li><b>Weather stamped.</b> Temperature and humidity are recorded with each run, for tuning the rule later.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="kicker">Treatment</div>
+  <h2>Acid bath</h2>
+  <p class="lead">The sulfur tent's technique, step for step: a batch is dipping, then drying, then done. Each bath shows when its chemicals are due, by days or by crates since the last change.</p>
+  <figure><img src="shots-ph/acid-01-baths.png" alt="Acid baths" style="max-height:150mm;width:auto;margin:0 auto"><figcaption>Bath 1 ready with a batch drying below it; Bath 2 mid-dip with the countdown and a bought-in load.</figcaption></figure>
+  <ul class="feat">
+    <li><b>Dip and dry timers.</b> A dip left in sounds the alarm; drying only says ready to pack.</li>
+    <li><b>Chemical health.</b> Days and crates since the last change against the bath's own limits, with a concentration check recorded beside it.</li>
+    <li><b>Export from finished sulfur runs.</b> An export batch is picked from the runs not yet dipped, its block and crates copied in; local fruit comes straight from the day's receipts.</li>
+    <li><b>Every stage one way.</b> A batch cannot be reopened by a stale copy from another tablet.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="kicker">Packing</div>
+  <h2>Pallet Stack</h2>
+  <p class="lead">The paper consignment sheet, on a phone. Scan the pallet label, pick the supplier and market, and list what is on it: cartons, carton type and block. The day builds up under USA, EU and Local headings with their totals.</p>
+  <div class="screens two">
+    <figure><img src="shots-ph/pallet-01-stack-c.png" alt="Pallet Stack" style="max-height:205mm;width:auto;margin:0 auto"><figcaption>Pallets added today, grouped by market with cartons and kilograms per group.</figcaption></figure>
+    <figure><img src="shots-ph/pallet-02-form-c.png" alt="New pallet" style="max-height:205mm;width:auto;margin:0 auto"><figcaption>New pallet: scan the label, the next pallet number is offered, add a line per carton type.</figcaption></figure>
+  </div>
+  <ul class="feat">
+    <li><b>Scan twice, trust once.</b> The barcode is taken only when the camera reads it the same twice in a row, so a noisy label never lands on a pallet.</li>
+    <li><b>Unique for the season.</b> Pallet numbers and barcodes cannot be reused while a pallet is live; a removed pallet frees its number.</li>
+    <li><b>Carton weights from Settings.</b> Each line copies the carton's real weight, so kilograms on the note match the scale and old pallets never change.</li>
+    <li><b>Editable until it leaves.</b> Tap a pallet to change or delete it; the pallets of the whole season stay on the phone, folded by market.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="kicker">Dispatch</div>
+  <h2>Delivery Note</h2>
+  <p class="lead">Tick the pallets going on the truck, pick the receiver and transporter, scan the seal, and the note is numbered, saved and ready to print or share from the phone.</p>
+  <div class="screens two">
+    <figure><img src="shots-ph/note-01-list-c.png" alt="Delivery notes" style="max-height:205mm;width:auto;margin:0 auto"><figcaption>Today's notes and the season's, by market. Tap one to edit, print or share.</figcaption></figure>
+    <figure><img src="shots-ph/note-02-form-c.png" alt="New delivery note" style="max-height:200mm;width:auto;margin:0 auto"><figcaption>New note: once an EU pallet is ticked the other markets grey out, and the LW- number is offered.</figcaption></figure>
+  </div>
+  <ul class="feat">
+    <li><b>One market per note.</b> A note holds USA, EU or local pallets, never a mix, and a pallet is on at most one live note.</li>
+    <li><b>Local notes print the delivery note</b> as a PDF laid out like the paper one, in Afrikaans and English, with "page X of Y" and the signature boxes blank.</li>
+    <li><b>Export notes print the market's papers:</b> the phyto accompanying document, the consignment note and the PPECB inspection sheet, as Excel or PDF, with the farm's PUC, PHC and GGN filled in.</li>
+    <li><b>Receivers and transporters from Settings,</b> copied onto the note, so a note that has gone out never changes.</li>
+    <li><b>Deleting wants the PIN,</b> and frees the pallets for another note.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="kicker">Juice</div>
+  <h2>Juice bins and crates</h2>
+  <p class="lead">Replaces the scale's two stickers per bin. Weigh a bin empty and save it; open it again when it is full. Full bins go on their own J- delivery note.</p>
+  <div class="screens two">
+    <figure><img src="shots-ph/juice-01-bins-c.png" alt="Juice" style="max-height:200mm;width:auto;margin:0 auto"><figcaption>Bins still waiting for a weight first, then the full ones in green, then the juice notes.</figcaption></figure>
+    <figure><img src="shots-ph/juice-02-form-c.png" alt="New bin" style="max-height:200mm;width:auto;margin:0 auto"><figcaption>New bin: the next number offered, empty now and full later.</figcaption></figure>
+  </div>
+  <ul class="feat">
+    <li><b>Crates by the batch.</b> A crate record is counted, not weighed: number of crates times weight per crate.</li>
+    <li><b>Own number series.</b> Juice notes run from J-0001, apart from the B- and LW- series.</li>
+    <li><b>Net weight on the note.</b> Full minus empty per bin, with the load's total.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="kicker">Settings</div>
+  <h2>Lists, numbers and the sulfur log</h2>
+  <p class="lead">Behind the PIN: the tents and baths, the cartons and markets, the receivers, transporters and overseas target receivers, the suggested-time numbers, and the daily sulfur report.</p>
+  <div class="screens two" style="align-items:start">
+    <figure><img src="shots-ph/settings-01-deliverynote-c.png" alt="Delivery note settings" style="max-height:150mm;width:auto;margin:0 auto"><figcaption>Delivery Note settings: transporters, receivers, USA and EU target receivers, the next note number.</figcaption></figure>
+    <div>
+      <figure><img src="shots-ph/settings-02-palletstack.png" alt="Pallet Stack settings" style="max-height:72mm;width:auto;margin:0 auto"><figcaption>Cartons with their real weight, and the markets.</figcaption></figure>
+      <figure style="margin-top:8px"><img src="shots-ph/settings-05-sulfur-report-c.png" alt="Sulfur daily report" style="max-height:72mm;width:auto;margin:0 auto"><figcaption>The sulfur room log and usage per tent per day, as a table, Excel or PDF.</figcaption></figure>
+    </div>
+  </div>
+  <table class="spec">
+    <tr><td>Retire, never delete</td><td>A tent, bath, carton, market or receiver is unticked when no longer used, so old records keep their names.</td></tr>
+    <tr><td>Backups</td><td>A daily backup of the pack-house data, with Backup Now in Settings.</td></tr>
+    <tr><td>Settings PIN</td><td>Four digits, changed in Settings; five wrong tries lock it for five minutes. Pallet Stack and Delivery Note can also be opened with the PIN when no badge is at hand.</td></tr>
+    <tr><td>Hosting and data</td><td>Your farm lives at yourfarm.plaashek.co.za on a South African hosting service, encrypted in transit and at rest, backed up daily, never shared between farms.</td></tr>
+  </table>
+  <div class="note">Plaashek Packhouse is one module of the Plaashek suite. It reads Plaashek Harvest's blocks, suppliers, workers and received lots; Harvest's office in turn reads the delivery notes for its Markets tab and planner. Any process that happens in your pack house, from grading to cold store to dispatch, can be added as a screen of its own.</div>
+</section>
+
+</body>
+</html>

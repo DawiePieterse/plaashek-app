@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Plaashek Owner</title>
+<style>
+  @page { size: A4; margin: 14mm 14mm 16mm 14mm; }
+  :root { --navy:#0b2e63; --ink:#1e293b; --muted:#64748b; --line:#e2e8f0; --tint:#f1f5f9; --green:#16a34a; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Inter, Helvetica, Arial, sans-serif; color: var(--ink); margin: 0; font-size: 10.5pt; line-height: 1.45; }
+  h1, h2, h3 { color: var(--navy); margin: 0; }
+  .cover { height: 262mm; display: flex; flex-direction: column; justify-content: space-between; page-break-after: always; }
+  .cover .brand { font-size: 44pt; font-weight: 800; letter-spacing: -0.5px; }
+  .cover .sub { font-size: 20pt; color: var(--muted); margin-top: 6px; }
+  .cover .tag { margin-top: 28px; font-size: 13pt; max-width: 150mm; }
+  .cover .band { background: var(--navy); color: #fff; padding: 20px 24px; border-radius: 12px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+  .cover .band div b { display: block; font-size: 12.5pt; margin-bottom: 3px; }
+  .cover .band div { font-size: 9.5pt; line-height: 1.4; opacity: 0.95; }
+  .cover .foot { color: var(--muted); font-size: 9pt; }
+  section { page-break-before: always; }
+  section.flow { page-break-before: auto; }
+  .kicker { text-transform: uppercase; letter-spacing: 1.5px; font-size: 8.5pt; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+  h2 { font-size: 20pt; margin-bottom: 4px; }
+  h3 { font-size: 13pt; margin: 14px 0 4px; }
+  p.lead { font-size: 11.5pt; color: #334155; margin: 0 0 10px; max-width: 165mm; }
+  .screens { display: grid; gap: 10px; margin: 10px 0 6px; }
+  .screens.two { grid-template-columns: 1fr 1fr; }
+  .screens.tablets { grid-template-columns: 1fr 1fr; }
+  figure { margin: 0; break-inside: avoid; }
+  figure img { width: 100%; display: block; border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 2px 8px rgba(15,23,42,0.08); }
+  figcaption { font-size: 8.5pt; color: var(--muted); margin-top: 4px; }
+  .tablets img { max-height: 148mm; width: auto; margin: 0 auto; }
+  ul.feat { margin: 6px 0 0; padding-left: 0; list-style: none; columns: 2; column-gap: 24px; }
+  ul.feat li { break-inside: avoid; margin-bottom: 6px; padding-left: 16px; position: relative; font-size: 9.8pt; }
+  ul.feat li::before { content: ""; position: absolute; left: 0; top: 7px; width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+  ul.feat li b { color: var(--navy); }
+  .roles { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 14px; }
+  .role { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; background: var(--tint); }
+  .role b { display: block; color: var(--navy); font-size: 12pt; margin-bottom: 4px; }
+  .role span { font-size: 9.5pt; color: #334155; }
+  .flowline { display: flex; align-items: center; gap: 8px; margin: 18px 0 4px; font-weight: 600; color: var(--navy); font-size: 10.5pt; flex-wrap: wrap; }
+  .flowline .step { background: #fff; border: 1.5px solid var(--navy); border-radius: 999px; padding: 4px 12px; }
+  .flowline .arrow { color: var(--muted); }
+  .note { background: var(--tint); border-left: 4px solid var(--navy); padding: 8px 12px; border-radius: 6px; font-size: 9.5pt; margin-top: 10px; }
+  .footer { position: running(footer); }
+  table.spec { border-collapse: collapse; width: 100%; font-size: 9.5pt; margin-top: 10px; }
+  table.spec td { padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.spec td:first-child { width: 38mm; font-weight: 600; color: var(--navy); }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div>
+    <div class="kicker">Product overview</div>
+    <div class="brand">Plaashek</div>
+    <div class="sub">Owner: the season against its own history</div>
+    <div class="tag">The owner's view of the farm, on a phone. What is being picked right now, how this season compares with every season on record, the weather that drove each of them, a transparent harvest-risk score, the owner's own crop estimate block by block, and what the fruit actually made at market.</div>
+  </div>
+  <div class="band">
+    <div><b>Analysis</b>Season pace, yield per block and per tree, variety trends, season length and monthly volume, every season side by side.</div>
+    <div><b>Estimate and Risk</b>A per-block crop estimate with a pack-out mix, checked against a weather model built from the farm's own record.</div>
+    <div><b>Weather and Markets</b>Hourly weather since 2012, and the prices the fruit made by pack type and buyer against a public reference.</div>
+  </div>
+  <div class="foot">Hosted in South Africa at yourfarm.plaashek.co.za. All screens in this document show demonstration data; seasons, weather and figures are invented.</div>
+</div>
+
+<section>
+  <div class="kicker">How it fits together</div>
+  <h2>The farm in the owner's pocket</h2>
+  <p class="lead">Plaashek Owner reads the harvest that Plaashek Harvest captures and the delivery notes Packhouse makes, and adds what only the owner keeps: the seasons before the apps, the weather record, the crop estimate and the market statements. Nothing is captured twice. It is built phone first, with the same six tabs on a PC.</p>
+  <div class="screens" style="grid-template-columns: 2fr 0.9fr; align-items:start">
+    <figure><img src="shots-owner/owner-01-dashboard.png" alt="Dashboard"><figcaption>Dashboard: the season's figures from Harvest, including what is still being picked and in transit right now, and the kilograms delivered against picked.</figcaption></figure>
+    <figure><img src="shots-owner/owner-07-phone-dashboard.png" alt="Phone dashboard" style="max-height:120mm;max-width:100%;width:auto;margin:0 auto"><figcaption>The same dashboard on a phone.</figcaption></figure>
+  </div>
+  <ul class="feat">
+    <li><b>Phone first.</b> Six tabs: Dashboard, Analysis, Estimate, Weather, Risk and Markets. Every chart is drawn on the device and downloads as a PDF; every table as Excel.</li>
+    <li><b>Reads, never disturbs.</b> Harvest's and Packhouse's data are opened read only. The Estimate tab is the one screen that writes, into the owner's own database.</li>
+    <li><b>Seasons before the apps.</b> Past seasons are imported once from the farm's own spreadsheets, daily per block where the record has it and annual totals before that.</li>
+    <li><b>Weather on file.</b> Hourly weather for the farm's position, back to 2012, kept current every day from a weather service and, where the farm has one, its own station.</li>
+    <li><b>Optional AI help.</b> With a key on the server: ask about an estimate or the weather, check an estimate before saving, see what changed between two versions, and a short brief each morning. Without a key, everything else works.</li>
+    <li><b>Hosted in South Africa</b> at yourfarm.plaashek.co.za, with daily backups.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="kicker">Analysis</div>
+  <h2>This season against every season</h2>
+  <p class="lead">The current season laid over its own history, day by day. Which blocks are ahead or behind their average, which varieties are trending, how long each season ran and what each month contributed.</p>
+  <div class="screens two" style="align-items:start">
+    <figure><img src="shots-owner/an-1.png" alt="" style="max-height:185mm;max-width:100%;width:auto;margin:0 auto"><figcaption>Season to date and pace against the five-year average; cumulative kilograms day by day; this season's yield per hectare against each block's own history.</figcaption></figure>
+    <figure><img src="shots-owner/an-2.png" alt="" style="max-height:120mm;max-width:100%;width:auto;margin:0 auto"><figcaption>Harvest volume by block and season at a glance, and kilograms per tree for every block in every season as a heat map.</figcaption></figure>
+  </div>
+  <ul class="feat">
+    <li><b>Season pace.</b> Cumulative kilograms against each prior year and the average, so a late or short season shows itself early.</li>
+    <li><b>Per block, normalised.</b> Kilograms per hectare and per tree, so a small block and a big one compare fairly.</li>
+    <li><b>Variety, length and month.</b> Average yield per variety over time, first pick to last pick per season, and a monthly heat map with each month's share.</li>
+    <li><b>The historical workbook.</b> One button downloads the whole record as a spreadsheet, the way the farm used to keep it.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="kicker">Estimate</div>
+  <h2>The owner's crop estimate, block by block</h2>
+  <p class="lead">Every block in the register with its tree count and its history in kilograms per tree. Fill the estimate from last season or a past average, adjust the blocks that look different in the orchard, and save it as a version. As the season runs, the estimate is tracked against what is actually picked.</p>
+  <div class="screens two" style="align-items:start">
+    <figure><img src="shots-owner/es-1.png" alt="" style="max-height:180mm;max-width:100%;width:auto;margin:0 auto"><figcaption>Version picker, totals, "this season so far" against the typical pace by this day, and the estimate table with each block's last three seasons, five-year average, best five of ten and range.</figcaption></figure>
+    <figure><img src="shots-owner/es-2.png" alt="" style="max-height:150mm;max-width:100%;width:auto;margin:0 auto"><figcaption>Pack-out estimation: the estimate split by receiver and pack type into kilograms and cartons, filled from last season's market sales in one tap.</figcaption></figure>
+  </div>
+  <ul class="feat">
+    <li><b>Versions, not overwrites.</b> Each save is a version with a name, notes and the date. Compare versions and export any one to Excel.</li>
+    <li><b>Progress against the estimate.</b> What share of the crop past seasons had picked by this day, and where this season lands at that pace.</li>
+    <li><b>Pack-out mix.</b> Export, local, juice and rejects as percentages, turned into cartons per pack type with the pack house's own carton weights.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="kicker">Estimate</div>
+  <h2>Cross-checked against the weather</h2>
+  <p class="lead">Beside the owner's figure sits the weather model's: unfavourable, expected and favourable kilograms for the season, and the past seasons whose weather so far came closest, with what each of them produced.</p>
+  <figure><img src="shots-owner/es-3.png" alt="Weather model cross-check" style="max-height:70mm;max-width:100%;width:auto;margin:0 auto"><figcaption>Weather model cross-check: the estimate placed on the model's range, and each version against the model as it stood when that version was saved.</figcaption></figure>
+  <figure style="margin-top:8px"><img src="shots-owner/es-4.png" alt="Similar past seasons" style="max-height:110mm;max-width:100%;width:auto;margin:0 auto"><figcaption>Similar past seasons: ranked by closeness of weather on the four scored factors, each with its crop against its own average, picking start and season length.</figcaption></figure>
+  <ul class="feat">
+    <li><b>A range, not a number.</b> The model never pretends to know the crop to a kilogram. It shows a spread, and where the owner's estimate sits in it.</li>
+    <li><b>Snapshotted with each version,</b> so an estimate can be judged against what the weather said at the time, not only afterwards.</li>
+    <li><b>Honest about its limits.</b> Weather explains part of a season's swing. The similar-seasons spread is shown as the uncertainty, not hidden.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="kicker">Weather</div>
+  <h2>The weather record</h2>
+  <p class="lead">Hourly weather for the farm's own position, one line per season ticked, any two measurements against left and right axes. Temperature, humidity, dew point, rainfall, wind, soil temperature, UV and sunshine.</p>
+  <figure><img src="shots-owner/owner-04-weather.png" alt="Weather" style="max-height:120mm;max-width:100%;width:auto;margin:0 auto"><figcaption>Three seasons of mean temperature and daily rainfall overlaid: the dry 2022 spring, the wet 2024 one and this season.</figcaption></figure>
+  <ul class="feat">
+    <li><b>Kept current by itself.</b> Opening the tab pulls the hours since the last update and adds them to the stored record.</li>
+    <li><b>The farm's station first.</b> Where the farm has an on-site weather station its readings are used; the weather service fills in what the station does not measure.</li>
+    <li><b>Download any view</b> as a PDF for the file.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="kicker">Risk</div>
+  <h2>A transparent harvest-risk score</h2>
+  <p class="lead">A score from 0 to 100 of how risky the season's weather looks for a poor harvest, built from the four weather factors that best explained this farm's own harvest swings across its record. Not a generic forecast: each factor shows its window, its reading and why it matters.</p>
+  <figure><img src="shots-owner/ri-1.png" alt="Harvest forecast" style="max-height:95mm;max-width:100%;width:auto;margin:0 auto"><figcaption>Harvest Forecast: favourable, expected and unfavourable kilograms for the season, with each factor's basis (days actual, forecast or assumed) and the expected figure's trend over the last week.</figcaption></figure>
+  <figure style="margin-top:8px"><img src="shots-owner/ri-2.png" alt="Risk score" style="max-height:85mm;max-width:100%;width:auto;margin:0 auto"><figcaption>The score so far, and a card per factor: window, reading, plain-language reason and where it sits in the farm's own range.</figcaption></figure>
+</section>
+
+<section>
+  <div class="kicker">Risk</div>
+  <h2>Back-tested against every season</h2>
+  <div class="screens" style="grid-template-columns: 1.6fr 1fr; align-items:start">
+    <figure><img src="shots-owner/ri-3.png" alt="Risk by season"><figcaption>Risk score by season beside the actual harvest by season: a higher score should line up with a poorer crop, and the owner can see for themselves whether it does.</figcaption></figure>
+    <figure><img src="shots-owner/owner-08-phone-risk.png" alt="Risk on a phone" style="max-height:150mm;max-width:100%;width:auto;margin:0 auto"><figcaption>The Risk tab on a phone.</figcaption></figure>
+  </div>
+  <ul class="feat">
+    <li><b>Four factors, fixed windows.</b> Air dryness and warmth while fruit develops, sunshine at flowering, rain while fruit sizes. The same calendar windows every year.</li>
+    <li><b>Open windows are projected.</b> A factor whose window has not closed blends actual days, the weather forecast and the farm's historical scenarios, and says how many days of each.</li>
+    <li><b>Method in the open.</b> "How this score is calculated" explains the study behind the factors and its limits, in the app itself.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="kicker">Markets</div>
+  <h2>What the fruit actually made</h2>
+  <p class="lead">The owner's market statements, by pack type, buyer and day, laid over past seasons and read against a free published whole-market reference price.</p>
+  <figure><img src="shots-owner/mk-1.png" alt="Markets" style="max-height:160mm;max-width:100%;width:auto;margin:0 auto"><figcaption>Daily rand per carton by receiver for one pack type, this season solid and last season dotted, with the whole-market reference as a dashed line; below it, each pack type's season price weighted by cartons sold.</figcaption></figure>
+  <ul class="feat">
+    <li><b>Season over season.</b> Seasons are laid over each other by week, so this year's price curve sits on last year's.</li>
+    <li><b>Reference price recorded daily,</b> because the public page only ever shows one day.</li>
+    <li><b>Feeds the estimate.</b> Last season's cartons per buyer and pack type fill the pack-out mix on the Estimate tab.</li>
+  </ul>
+  <table class="spec" style="margin-top:12px">
+    <tr><td>Ask AI (optional)</td><td>With an AI key on the server: ask about this estimate or this weather in plain language, check an estimate block by block before saving, see what changed between two versions, a short season brief each morning, and ask the farm's notebook (Plaashek Notes). Figures are gathered first and the model is called after; nothing waits on it.</td></tr>
+    <tr><td>Exports</td><td>Every chart as PDF, every table and the estimate as Excel, and the whole historical record as one workbook.</td></tr>
+    <tr><td>Hosting and data</td><td>Your farm lives at yourfarm.plaashek.co.za on a South African hosting service, encrypted in transit and at rest, backed up daily, never shared between farms.</td></tr>
+  </table>
+  <div class="note">Plaashek Owner is one module of the Plaashek suite. It reads Plaashek Harvest and Packhouse; Harvest's planner reads the owner's latest estimate back.</div>
+</section>
+
+</body>
+</html>

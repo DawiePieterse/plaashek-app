@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Plaashek Labour</title>
+<style>
+  @page { size: A4; margin: 14mm 14mm 16mm 14mm; }
+  :root { --navy:#0b2e63; --ink:#1e293b; --muted:#64748b; --line:#e2e8f0; --tint:#f1f5f9; --green:#16a34a; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Inter, Helvetica, Arial, sans-serif; color: var(--ink); margin: 0; font-size: 10.5pt; line-height: 1.45; }
+  h1, h2, h3 { color: var(--navy); margin: 0; }
+  .cover { height: 262mm; display: flex; flex-direction: column; justify-content: space-between; page-break-after: always; }
+  .cover .brand { font-size: 44pt; font-weight: 800; letter-spacing: -0.5px; }
+  .cover .sub { font-size: 20pt; color: var(--muted); margin-top: 6px; }
+  .cover .tag { margin-top: 28px; font-size: 13pt; max-width: 150mm; }
+  .cover .band { background: var(--navy); color: #fff; padding: 20px 24px; border-radius: 12px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+  .cover .band div b { display: block; font-size: 12.5pt; margin-bottom: 3px; }
+  .cover .band div { font-size: 9.5pt; line-height: 1.4; opacity: 0.95; }
+  .cover .foot { color: var(--muted); font-size: 9pt; }
+  section { page-break-before: always; }
+  section.flow { page-break-before: auto; }
+  .kicker { text-transform: uppercase; letter-spacing: 1.5px; font-size: 8.5pt; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+  h2 { font-size: 20pt; margin-bottom: 4px; }
+  h3 { font-size: 13pt; margin: 14px 0 4px; }
+  p.lead { font-size: 11.5pt; color: #334155; margin: 0 0 10px; max-width: 165mm; }
+  .screens { display: grid; gap: 10px; margin: 10px 0 6px; }
+  .screens.two { grid-template-columns: 1fr 1fr; }
+  .screens.tablets { grid-template-columns: 1fr 1fr; }
+  figure { margin: 0; break-inside: avoid; }
+  figure img { width: 100%; display: block; border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 2px 8px rgba(15,23,42,0.08); }
+  figcaption { font-size: 8.5pt; color: var(--muted); margin-top: 4px; }
+  .tablets img { max-height: 148mm; width: auto; margin: 0 auto; }
+  ul.feat { margin: 6px 0 0; padding-left: 0; list-style: none; columns: 2; column-gap: 24px; }
+  ul.feat li { break-inside: avoid; margin-bottom: 6px; padding-left: 16px; position: relative; font-size: 9.8pt; }
+  ul.feat li::before { content: ""; position: absolute; left: 0; top: 7px; width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+  ul.feat li b { color: var(--navy); }
+  .roles { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 14px; }
+  .role { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; background: var(--tint); }
+  .role b { display: block; color: var(--navy); font-size: 12pt; margin-bottom: 4px; }
+  .role span { font-size: 9.5pt; color: #334155; }
+  .flowline { display: flex; align-items: center; gap: 8px; margin: 18px 0 4px; font-weight: 600; color: var(--navy); font-size: 10.5pt; flex-wrap: wrap; }
+  .flowline .step { background: #fff; border: 1.5px solid var(--navy); border-radius: 999px; padding: 4px 12px; }
+  .flowline .arrow { color: var(--muted); }
+  .note { background: var(--tint); border-left: 4px solid var(--navy); padding: 8px 12px; border-radius: 6px; font-size: 9.5pt; margin-top: 10px; }
+  .footer { position: running(footer); }
+  table.spec { border-collapse: collapse; width: 100%; font-size: 9.5pt; margin-top: 10px; }
+  table.spec td { padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.spec td:first-child { width: 38mm; font-weight: 600; color: var(--navy); }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div>
+    <div class="kicker">Product overview</div>
+    <div class="brand">Plaashek</div>
+    <div class="sub">Labour: the pack-house time clock</div>
+    <div class="tag">A phone at the door scans each worker's badge in and out. Hours and overtime are worked out by themselves, missed scans are caught before payday, and the wage sheet downloads as a spreadsheet. The same badge the field tablets scan, so the register is set up once.</div>
+  </div>
+  <div class="band">
+    <div><b>The door phone</b>Scan the badge: the screen turns green IN or red OUT with the worker's name and photo. Works offline.</div>
+    <div><b>Fix</b>Every IN without an OUT, and the other way round, listed for the admin with the reason kept on record.</div>
+    <div><b>Pay</b>Hours, daily and weekly overtime at the farm's own rate and thresholds, per worker, as Excel.</div>
+  </div>
+  <div class="foot">Hosted in South Africa at yourfarm.plaashek.co.za. All screens in this document show demonstration data; names and figures are invented.</div>
+</div>
+
+<section>
+  <div class="kicker">The door</div>
+  <h2>Scan in, scan out</h2>
+  <p class="lead">Any phone at the pack-house door. Tap Scan Worker QR, point the camera at the badge, and the screen fills with IN or OUT, the name and the time. The next worker is one tap away.</p>
+  <div class="screens" style="grid-template-columns: 1.1fr 0.9fr 0.9fr; align-items:start">
+    <figure><img src="shots-labour/door-01-scan-c.png" alt="Door phone" style="max-height:175mm;max-width:100%;width:auto;margin:0 auto"><figcaption>The door phone: who is inside now, scans waiting to sync, and the last 24 hours from every phone, newest first.</figcaption></figure>
+    <figure><img src="shots-labour/door-02-in-c.png" alt="IN" style="max-height:100mm;max-width:100%;width:auto;margin:0 auto"><figcaption>Green IN with a one-tap "Wrong? Make it OUT".</figcaption></figure>
+    <figure><img src="shots-labour/door-03-out-c.png" alt="OUT" style="max-height:100mm;max-width:100%;width:auto;margin:0 auto"><figcaption>Red OUT. A badge scanned twice within a minute is refused, so a double tap cannot turn an IN into an OUT.</figcaption></figure>
+  </div>
+  <ul class="feat">
+    <li><b>The phone decides IN or OUT</b> from who is inside, so a worker never has to choose. The operator can flip it while the screen is still up.</li>
+    <li><b>Works with no signal.</b> Scans are saved on the phone with the time they were made and sent when the connection returns. "Waiting to sync" counts them.</li>
+    <li><b>Every door phone in one list.</b> Each phone has a name; a phone that went quiet while the others kept scanning is easy to spot.</li>
+    <li><b>Forgot to scan out?</b> An OUT long after the IN is flagged on the screen, with the time of that IN, while the operator can still change it.</li>
+    <li><b>Badges from the register.</b> The QR badge is the one Plaashek Harvest prints; a badge that is not an active worker is refused by name.</li>
+    <li><b>No pay on the door phone.</b> It shows who is inside and when they came in, never hours or money.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="kicker">Admin</div>
+  <h2>Who is inside, and what needs fixing</h2>
+  <p class="lead">The admin page is behind a PIN, on the admin's own phone. Today shows who is in the building right now. Fix lists every scan without a partner: those hours are not paid until someone fixes them, with a reason that stays on record.</p>
+  <div class="screens" style="grid-template-columns: 1fr 1fr 1fr; align-items:start">
+    <figure><img src="shots-labour/admin-01-today-c.png" alt="Today" style="max-height:95mm;max-width:100%;width:auto;margin:0 auto"><figcaption>Today: inside the pack house now, with the time in and hours so far. The red badge counts scans to fix.</figcaption></figure>
+    <figure><img src="shots-labour/admin-02-fix-c.png" alt="Fix" style="max-height:125mm;max-width:100%;width:auto;margin:0 auto"><figcaption>Fix: still inside after 12 hours, unpaired scans from the last 14 days, and any day's scans to correct.</figcaption></figure>
+    <figure><img src="shots-labour/admin-02b-fix-form-c.png" alt="Add exit time" style="max-height:125mm;max-width:100%;width:auto;margin:0 auto"><figcaption>Add exit time: the form shows the shift it will make and asks why, before anything is saved.</figcaption></figure>
+  </div>
+  <ul class="feat">
+    <li><b>Nothing paid by guesswork.</b> An IN with no OUT, or an OUT with no IN, is an exception, not a shift. The pay report says how many are outstanding.</li>
+    <li><b>Every correction on record:</b> what changed, when, from which phone and why. Deleted scans are kept, marked deleted.</li>
+    <li><b>Night shifts are fine.</b> Up to 18 hours counts as one shift; longer is flagged as a forgotten exit.</li>
+    <li><b>No future times.</b> A time in the future is a wrong date, and the form says so instead of saving it.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="kicker">Admin</div>
+  <h2>Pay and settings</h2>
+  <p class="lead">Pick this week, last week or any dates, tap Show, and every worker's days, hours, overtime hours and amount are there. Export downloads the wage sheet, the shifts behind it and the unresolved scans as three sheets of one spreadsheet.</p>
+  <div class="screens two" style="align-items:start">
+    <figure><img src="shots-labour/admin-03-pay-c.png" alt="Pay" style="max-height:150mm;max-width:100%;width:auto;margin:0 auto"><figcaption>Pay: the week per worker, with a warning when scans in the period are still unpaired.</figcaption></figure>
+    <figure><img src="shots-labour/admin-04-settings-c.png" alt="Settings" style="max-height:150mm;max-width:100%;width:auto;margin:0 auto"><figcaption>Settings: the hourly rate with its overtime multiplier and daily and weekly thresholds, backups, and the admin PIN.</figcaption></figure>
+  </div>
+  <ul class="feat">
+    <li><b>Overtime the BCEA way.</b> Hours past the daily threshold are overtime; of the rest, hours that take the Monday-to-Sunday week past the weekly threshold are overtime on the day they happen. Never double counted.</li>
+    <li><b>Rates are dated, never edited.</b> A new rate applies from its date; earlier days keep the rate they had, so last month's sheet never changes.</li>
+    <li><b>Whole weeks for the threshold.</b> A pay period that starts on a Thursday still knows about Monday's hours.</li>
+    <li><b>Nightly backups</b> of every scan, correction and rate, kept for 30 days, with Backup now.</li>
+    <li><b>PIN, not passwords.</b> The door phones need none; the admin page needs the PIN, and changing it signs every other phone out.</li>
+  </ul>
+  <table class="spec" style="margin-top:12px">
+    <tr><td>Devices</td><td>Any Apple or Android phone with a camera, added to the home screen like an app. One or more door phones, one admin phone.</td></tr>
+    <tr><td>Register</td><td>Workers, their badges and photos come from Plaashek Harvest's register, read only. Nothing is typed twice.</td></tr>
+    <tr><td>Hosting and data</td><td>Your farm lives at yourfarm.plaashek.co.za on a South African hosting service, encrypted in transit and at rest, backed up daily, never shared between farms.</td></tr>
+  </table>
+  <div class="note">Plaashek Labour is one module of the Plaashek suite. It pays hourly for the pack house; Plaashek Harvest pays pickers per kilogram from the same badges.</div>
+</section>
+
+</body>
+</html>
