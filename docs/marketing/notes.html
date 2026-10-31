@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Plaashek Notes</title>
+<style>
+  @page { size: A4; margin: 14mm 14mm 16mm 14mm; }
+  :root { --navy:#0b2e63; --ink:#1e293b; --muted:#64748b; --line:#e2e8f0; --tint:#f1f5f9; --green:#16a34a; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Inter, Helvetica, Arial, sans-serif; color: var(--ink); margin: 0; font-size: 10.5pt; line-height: 1.45; }
+  h1, h2, h3 { color: var(--navy); margin: 0; }
+  .cover { height: 262mm; display: flex; flex-direction: column; justify-content: space-between; page-break-after: always; }
+  .cover .brand { font-size: 44pt; font-weight: 800; letter-spacing: -0.5px; }
+  .cover .sub { font-size: 20pt; color: var(--muted); margin-top: 6px; }
+  .cover .tag { margin-top: 28px; font-size: 13pt; max-width: 150mm; }
+  .cover .band { background: var(--navy); color: #fff; padding: 20px 24px; border-radius: 12px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+  .cover .band div b { display: block; font-size: 12.5pt; margin-bottom: 3px; }
+  .cover .band div { font-size: 9.5pt; line-height: 1.4; opacity: 0.95; }
+  .cover .foot { color: var(--muted); font-size: 9pt; }
+  section { page-break-before: always; }
+  section.flow { page-break-before: auto; }
+  .kicker { text-transform: uppercase; letter-spacing: 1.5px; font-size: 8.5pt; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+  h2 { font-size: 20pt; margin-bottom: 4px; }
+  h3 { font-size: 13pt; margin: 14px 0 4px; }
+  p.lead { font-size: 11.5pt; color: #334155; margin: 0 0 10px; max-width: 165mm; }
+  .screens { display: grid; gap: 10px; margin: 10px 0 6px; }
+  .screens.two { grid-template-columns: 1fr 1fr; }
+  .screens.tablets { grid-template-columns: 1fr 1fr; }
+  figure { margin: 0; break-inside: avoid; }
+  figure img { width: 100%; display: block; border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 2px 8px rgba(15,23,42,0.08); }
+  figcaption { font-size: 8.5pt; color: var(--muted); margin-top: 4px; }
+  .tablets img { max-height: 148mm; width: auto; margin: 0 auto; }
+  ul.feat { margin: 6px 0 0; padding-left: 0; list-style: none; columns: 2; column-gap: 24px; }
+  ul.feat li { break-inside: avoid; margin-bottom: 6px; padding-left: 16px; position: relative; font-size: 9.8pt; }
+  ul.feat li::before { content: ""; position: absolute; left: 0; top: 7px; width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+  ul.feat li b { color: var(--navy); }
+  .roles { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 14px; }
+  .role { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; background: var(--tint); }
+  .role b { display: block; color: var(--navy); font-size: 12pt; margin-bottom: 4px; }
+  .role span { font-size: 9.5pt; color: #334155; }
+  .flowline { display: flex; align-items: center; gap: 8px; margin: 18px 0 4px; font-weight: 600; color: var(--navy); font-size: 10.5pt; flex-wrap: wrap; }
+  .flowline .step { background: #fff; border: 1.5px solid var(--navy); border-radius: 999px; padding: 4px 12px; }
+  .flowline .arrow { color: var(--muted); }
+  .note { background: var(--tint); border-left: 4px solid var(--navy); padding: 8px 12px; border-radius: 6px; font-size: 9.5pt; margin-top: 10px; }
+  .footer { position: running(footer); }
+  table.spec { border-collapse: collapse; width: 100%; font-size: 9.5pt; margin-top: 10px; }
+  table.spec td { padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.spec td:first-child { width: 38mm; font-weight: 600; color: var(--navy); }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div>
+    <div class="kicker">Product overview</div>
+    <div class="brand">Plaashek</div>
+    <div class="sub">Notes: the farm's notebook, in your pocket</div>
+    <div class="tag">What you saw in the orchard, dictated on your phone where you stand, with the block, the weather and the spot it was captured. Every note can become work on the To do list, so it doubles as a work-order book for farm staff: what to do, on which block, with what and by when. Every job ticked off becomes the block's history. Written so the next generation has the farm's knowledge.</div>
+  </div>
+  <div class="band">
+    <div><b>Capture</b>Dictate or type, pick the block, add photos. Saved on the phone instantly, synced when there is signal.</div>
+    <div><b>To do</b>Work orders for the staff: every action a note leads to, by block, longest waiting first. Tick it off with what was actually used.</div>
+    <div><b>Notes</b>Search and filter by tag, block, variety or action: a block's whole history of spraying, feeding and pruning.</div>
+  </div>
+  <div class="foot">Hosted in South Africa at yourfarm.plaashek.co.za. All screens in this document show demonstration data; notes, blocks and photos are invented.</div>
+</div>
+
+<section>
+  <div class="kicker">Capture</div>
+  <h2>Say it where you see it</h2>
+  <p class="lead">A note is a title, the block or spot, the words, the actions it leads to, tags and photos. Tap the microphone on the phone's keyboard and talk; the app stamps where you stood and what the weather was.</p>
+  <div class="screens" style="grid-template-columns: 1fr 1fr; align-items:start">
+    <figure><img src="shots-notes/notes-01-capture-c.png" alt="Capture" style="max-height:185mm;max-width:100%;width:auto;margin:0 auto"><figcaption>New Note: block picked from the list, the dictated text, a Prune action with what to use, and two tags.</figcaption></figure>
+    <div>
+      <ul class="feat" style="columns:1">
+        <li><b>Offline first.</b> Save Note writes to the phone at once and syncs in the background every few seconds while there is signal. No note is ever lost to a dead spot in the orchard.</li>
+        <li><b>Captured once, never changed.</b> Location and weather are recorded when the note is made; an edit at the house that evening does not move it.</li>
+        <li><b>Actions, not just words.</b> Tap Prune, Fertilise, Water, Spray, Scout or Pick, say with what, and it goes on the To do list. Tick the circle if it is already done.</li>
+        <li><b>Tags you keep adding to.</b> A starter set of farm tags, and any word typed becomes a new one. Spelling snaps to the existing tag.</li>
+        <li><b>Photos from the camera roll</b> or taken on the spot, several per note.</li>
+        <li><b>Afrikaans and English alike.</b> Search ignores accents and case, so "spuit" finds "Spuitprogram" and "more" finds "môre".</li>
+        <li><b>Apple or Android,</b> added to the home screen like an app, in the phone's own light or dark mode.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="kicker">To do</div>
+  <h2>From observation to work order to history</h2>
+  <p class="lead">The To do list is the farm's work-order book. Every action still waiting, grouped by block, longest waiting first: what to do, with what, and by when. The foreman opens it on their phone, does the job, taps the circle and says what was actually used. The note then records that the block was pruned, or sprayed, on which day and with what.</p>
+  <div class="screens" style="grid-template-columns: 1fr 1fr; align-items:start">
+    <figure><img src="shots-notes/notes-02-todo-c.png" alt="To do" style="max-height:180mm;max-width:100%;width:auto;margin:0 auto"><figcaption>To do: the open job on 8a with its photo, and the jobs parked under Later until their day.</figcaption></figure>
+    <div>
+      <figure><img src="shots-notes/notes-03-done-sheet-c.png" alt="Mark done" style="max-height:70mm;max-width:100%;width:auto;margin:0 auto"><figcaption>Mark as done, with a line for what was used.</figcaption></figure>
+      <ul class="feat" style="columns:1; margin-top:12px">
+        <li><b>Work orders for staff.</b> A note written by the owner becomes a job the foreman or a team leader sees on their own phone, with the block, the instruction and the product and rate. No paper slip, no WhatsApp message to find again.</li>
+        <li><b>Later.</b> The calendar on a row gives a job a day, tomorrow, in a week or a date, and parks it until then. The tab badge counts only what is due.</li>
+        <li><b>Works with no signal.</b> A tick made in the orchard is dated when it was ticked, not when it synced.</li>
+        <li><b>Two phones, one notebook.</b> Refresh pulls in what the other phone has added.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="kicker">Notes and Dashboard</div>
+  <h2>Find it again</h2>
+  <p class="lead">Search by title, text or block, and filter by tag, block, variety or action. Choose a block and an action together and you have that block's history: every spraying of 8b, when, and with what.</p>
+  <div class="screens" style="grid-template-columns: 1fr 1fr 1fr; align-items:start">
+    <figure><img src="shots-notes/notes-05-notes-c.png" alt="Notes" style="max-height:150mm;max-width:100%;width:auto;margin:0 auto"><figcaption>Notes, newest first, each with its photo, block, date, open actions and tags.</figcaption></figure>
+    <figure><img src="shots-notes/notes-06-history-c.png" alt="Block history" style="max-height:150mm;max-width:100%;width:auto;margin:0 auto"><figcaption>Block 9 filtered: each note shows how its action stands, to do in amber, done in green with the date.</figcaption></figure>
+    <figure><img src="shots-notes/notes-04-dashboard-c.png" alt="Dashboard" style="max-height:150mm;max-width:100%;width:auto;margin:0 auto"><figcaption>Dashboard: totals, notes per tag, and the most recent notes.</figcaption></figure>
+  </div>
+  <ul class="feat">
+    <li><b>Fifty at a time.</b> The list loads as it is scrolled, however many seasons are in the book.</li>
+    <li><b>Archive, never delete.</b> An archived note disappears from every list but is kept, and Restore puts it back as it was.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="kicker">A note in full, and Settings</div>
+  <h2>Everything a note knows</h2>
+  <div class="screens" style="grid-template-columns: 1fr 1fr; align-items:start">
+    <figure><img src="shots-notes/notes-07-detail-c.png" alt="Note detail" style="max-height:140mm;max-width:100%;width:auto;margin:0 auto"><figcaption>A note opened: date and time, block and variety, the weather and the spot it was captured (tap for the map), tags, its actions with when each was done, the text and photos.</figcaption></figure>
+    <figure><img src="shots-notes/notes-08-settings-c.png" alt="Settings" style="max-height:140mm;max-width:100%;width:auto;margin:0 auto"><figcaption>Settings: tags, actions and blocks with their variety, each showing how many notes use it; sync and backups below.</figcaption></figure>
+  </div>
+  <ul class="feat">
+    <li><b>Blocks with a variety.</b> Set up once; the Capture screen groups them by type, and Notes can filter by either.</li>
+    <li><b>Optional AI help.</b> With a key on the server, AI Tidy up punctuates a dictated note, suggests tags and the actions it implies, and Ask AI answers questions from the notebook alone. Without a key, everything else works.</li>
+    <li><b>Backups every night,</b> database and photos, with Back Up Now.</li>
+    <li><b>No audio stored.</b> Dictation is the phone's own; only the words reach the app.</li>
+  </ul>
+  <table class="spec" style="margin-top:12px">
+    <tr><td>Who it is for</td><td>The owner and whoever will run the farm after them, and the staff who carry out the work orders on the To do list. A phone each, one notebook, no sign-in.</td></tr>
+    <tr><td>Hosting and data</td><td>Your farm lives at yourfarm.plaashek.co.za on a South African hosting service, encrypted in transit and at rest, backed up daily, never shared between farms.</td></tr>
+  </table>
+  <div class="note">Plaashek Notes is one module of the Plaashek suite. Plaashek Owner's "Ask the farm notes" reads it, so a question about a block can draw on what was written in the orchard.</div>
+</section>
+
+</body>
+</html>

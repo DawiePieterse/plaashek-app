@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Plaashek Kudde</title>
+<style>
+  @page { size: A4; margin: 14mm 14mm 16mm 14mm; }
+  :root { --navy:#0b2e63; --ink:#1e293b; --muted:#64748b; --line:#e2e8f0; --tint:#f1f5f9; --green:#16a34a; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Inter, Helvetica, Arial, sans-serif; color: var(--ink); margin: 0; font-size: 10.5pt; line-height: 1.45; }
+  h1, h2, h3 { color: var(--navy); margin: 0; }
+  .cover { height: 262mm; display: flex; flex-direction: column; justify-content: space-between; page-break-after: always; }
+  .cover .brand { font-size: 44pt; font-weight: 800; letter-spacing: -0.5px; }
+  .cover .sub { font-size: 20pt; color: var(--muted); margin-top: 6px; }
+  .cover .tag { margin-top: 28px; font-size: 13pt; max-width: 150mm; }
+  .cover .band { background: var(--navy); color: #fff; padding: 20px 24px; border-radius: 12px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+  .cover .band div b { display: block; font-size: 12.5pt; margin-bottom: 3px; }
+  .cover .band div { font-size: 9.5pt; line-height: 1.4; opacity: 0.95; }
+  .cover .foot { color: var(--muted); font-size: 9pt; }
+  section { page-break-before: always; }
+  section.flow { page-break-before: auto; }
+  .kicker { text-transform: uppercase; letter-spacing: 1.5px; font-size: 8.5pt; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+  h2 { font-size: 20pt; margin-bottom: 4px; }
+  h3 { font-size: 13pt; margin: 14px 0 4px; }
+  p.lead { font-size: 11.5pt; color: #334155; margin: 0 0 10px; max-width: 165mm; }
+  .screens { display: grid; gap: 10px; margin: 10px 0 6px; }
+  .screens.two { grid-template-columns: 1fr 1fr; }
+  .screens.tablets { grid-template-columns: 1fr 1fr; }
+  figure { margin: 0; break-inside: avoid; }
+  figure img { width: 100%; display: block; border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 2px 8px rgba(15,23,42,0.08); }
+  figcaption { font-size: 8.5pt; color: var(--muted); margin-top: 4px; }
+  .tablets img { max-height: 148mm; width: auto; margin: 0 auto; }
+  ul.feat { margin: 6px 0 0; padding-left: 0; list-style: none; columns: 2; column-gap: 24px; }
+  ul.feat li { break-inside: avoid; margin-bottom: 6px; padding-left: 16px; position: relative; font-size: 9.8pt; }
+  ul.feat li::before { content: ""; position: absolute; left: 0; top: 7px; width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+  ul.feat li b { color: var(--navy); }
+  .roles { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 14px; }
+  .role { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; background: var(--tint); }
+  .role b { display: block; color: var(--navy); font-size: 12pt; margin-bottom: 4px; }
+  .role span { font-size: 9.5pt; color: #334155; }
+  .flowline { display: flex; align-items: center; gap: 8px; margin: 18px 0 4px; font-weight: 600; color: var(--navy); font-size: 10.5pt; flex-wrap: wrap; }
+  .flowline .step { background: #fff; border: 1.5px solid var(--navy); border-radius: 999px; padding: 4px 12px; }
+  .flowline .arrow { color: var(--muted); }
+  .note { background: var(--tint); border-left: 4px solid var(--navy); padding: 8px 12px; border-radius: 6px; font-size: 9.5pt; margin-top: 10px; }
+  .footer { position: running(footer); }
+  table.spec { border-collapse: collapse; width: 100%; font-size: 9.5pt; margin-top: 10px; }
+  table.spec td { padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.spec td:first-child { width: 38mm; font-weight: 600; color: var(--navy); }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div>
+    <div class="kicker">Product overview</div>
+    <div class="brand">Plaashek</div>
+    <div class="sub">Kudde: the herd book on a phone</div>
+    <div class="tag">Every animal and everything that happens to it: born, weighed, treated, moved, sold or died. Recorded at the kraal on a phone that works with no signal, so the office always knows where the herd is, what it weighs, and which animals may not be sold yet. Built for cattle, and adjusted for sheep, goats, pigs or any other livestock you keep.</div>
+  </div>
+  <div class="band">
+    <div><b>Field</b>The herd camp by camp. Tap an animal, record the event, done. Weigh and treat sessions run the whole crush in one go.</div>
+    <div><b>Admin</b>The office: herd counts by class and camp, who needs weighing, who is in withdrawal, the full editable herd list.</div>
+    <div><b>Any livestock</b>Cattle today. Sheep, goats, pigs and other animals follow the same records, with the farm's own class names and rules. Speak to Plaashek about your situation.</div>
+  </div>
+  <div class="foot">Hosted in South Africa at yourfarm.plaashek.co.za. All screens in this document show demonstration data; the herd and its camps are invented.</div>
+</div>
+
+<section>
+  <div class="kicker">Field</div>
+  <h2>The herd, camp by camp</h2>
+  <p class="lead">The field app is for whoever is out with the cattle. The herd is listed by camp in the farm's own order, each row with the animal's class, when it was last weighed, and its weight. Search by tag or name, or scan the tag.</p>
+  <div class="screens" style="grid-template-columns: 1fr 1.1fr; align-items:start">
+    <figure><img src="shots-kudde/field-01-herd-c.png" alt="Herd list" style="max-height:190mm;max-width:100%;width:auto;margin:0 auto"><figcaption>The herd: alive count, animals needing weighing, and a camp opened to its animals. A warning triangle marks an animal overdue a weighing.</figcaption></figure>
+    <div>
+      <figure><img src="shots-kudde/field-03-animal-c.png" alt="Animal" style="max-height:110mm;max-width:100%;width:auto;margin:0 auto"><figcaption>An animal: breed, class and withdrawal at the top, six event buttons, photos and the full history.</figcaption></figure>
+      <ul class="feat" style="columns:1; margin-top:10px">
+        <li><b>Works with no signal.</b> Every record is saved on the phone first and sent when the server is reachable. Counts are worked out on the phone, so they are right the moment something is recorded.</li>
+        <li><b>Six events.</b> Birth, weight, treatment, movement, sale and death. A death or sale sets the animal's status; there is no separate field to forget.</li>
+        <li><b>Class is derived.</b> Cow, heifer, bull, steer or calf comes from sex, birth date, the castrated flag and whether she has calved.</li>
+        <li><b>Need weighing is a worklist.</b> Tap the count and the list becomes only the animals overdue, by camp.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="kicker">Field</div>
+  <h2>Recording an event</h2>
+  <p class="lead">Today or yesterday with one tap, or any past date. A weight shows the last one and the daily gain. A treatment remembers the farm's products and sets the withdrawal period, so the animal is flagged until the day it may be sold.</p>
+  <div class="screens" style="grid-template-columns: 1fr 1fr 1fr; align-items:start">
+    <figure><img src="shots-kudde/field-04-weight-c.png" alt="Record weight" style="max-height:120mm;max-width:100%;width:auto;margin:0 auto"><figcaption>Record weight: the last weight, days since, the gain and kg per day as you type.</figcaption></figure>
+    <figure><img src="shots-kudde/field-05-treatment-c.png" alt="Record treatment" style="max-height:120mm;max-width:100%;width:auto;margin:0 auto"><figcaption>Record treatment: product chips from what the farm has used before, dose and withdrawal days.</figcaption></figure>
+    <figure><img src="shots-kudde/field-07-move-c.png" alt="Move camp" style="max-height:120mm;max-width:100%;width:auto;margin:0 auto"><figcaption>Move camp: the whole camp ticked, untick the ones staying, pick the camp they go to.</figcaption></figure>
+  </div>
+  <div class="screens" style="grid-template-columns: 1fr 2fr; align-items:start; margin-top:8px">
+    <figure><img src="shots-kudde/field-08-weigh-session-c.png" alt="Weigh session" style="max-height:60mm;max-width:100%;width:auto;margin:0 auto"><figcaption>Weigh session: tag, number, save and next, animal after animal.</figcaption></figure>
+    <ul class="feat" style="columns:1">
+      <li><b>Sessions for the crush.</b> A weigh or treat session takes one animal after another: type or scan the tag, the number, Save and next. A treat session applies the same product and dose to each.</li>
+      <li><b>Calvings in one step.</b> Calved on a cow records the birth and creates the calf with its dam and sire, in the cow's camp.</li>
+      <li><b>Weather for free.</b> With the farm's position set, each event is stamped with that day's temperature and rain, for looking back later.</li>
+      <li><b>Camps snap to spelling.</b> A camp typed at the gate matches the office's spelling, capitals or not; an unknown one is added rather than refused.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="kicker">Admin</div>
+  <h2>The office view</h2>
+  <p class="lead">The dashboard counts the live herd by class and by camp, lists every animal overdue a weighing and every one still in withdrawal, and shows the latest events from every phone.</p>
+  <figure><img src="shots-kudde/admin-01-dashboard-c.png" alt="Dashboard" style="max-height:150mm;max-width:100%;width:auto;margin:0 auto"><figcaption>Dashboard: alive, dead and sold; cows, heifers, bulls, steers and calves; herd by camp; needs weighing; in withdrawal with the first day each may be sold.</figcaption></figure>
+  <ul class="feat">
+    <li><b>Withdrawal is never missed.</b> Any animal inside a treatment's withdrawal is listed with the date it clears, and flagged in red on the herd list.</li>
+    <li><b>Six months without a weight</b> puts an animal on the needs-weighing list, with a link straight to its record.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="kicker">Admin</div>
+  <h2>Herd, records and settings</h2>
+  <div class="screens" style="grid-template-columns: 1.5fr 1fr; align-items:start">
+    <div>
+      <figure><img src="shots-kudde/admin-02-herd.png" alt="Herd" style="max-height:95mm;max-width:100%;width:auto;margin:0 auto"><figcaption>Herd: the full list with breed, class, birth date, camp, last weight and status, filtered by status and class. Move camp and Treat group for the office.</figcaption></figure>
+      <figure style="margin-top:8px"><img src="shots-kudde/admin-04-settings-c.png" alt="Settings" style="max-height:85mm;max-width:100%;width:auto;margin:0 auto"><figcaption>Settings: farm details, the camps in the order the phones offer them, the farm's position for the weather, and CSV exports.</figcaption></figure>
+    </div>
+    <figure><img src="shots-kudde/admin-03-animal-c.png" alt="Animal record" style="max-height:185mm;max-width:100%;width:auto;margin:0 auto"><figcaption>An animal's record in the office: identity, parents, photos, history and a form to add an event.</figcaption></figure>
+  </div>
+  <ul class="feat">
+    <li><b>Export for the accountant or the vet.</b> The herd and every event as spreadsheets.</li>
+    <li><b>Parents need not be on file.</b> A bought-in animal or a borrowed bull can still be a sire or dam.</li>
+    <li><b>Not only cattle.</b> Kudde is adjusted for sheep, goats, pigs and other livestock: the classes (ewe, ram, lamb; sow, boar, piglet), weigh intervals, gestation and litters are the farm's own settings. Speak to Plaashek about your situation.</li>
+  </ul>
+  <table class="spec" style="margin-top:12px">
+    <tr><td>Other animals</td><td>Sheep, goats, pigs, game or any other livestock: Kudde is set up for your animals with their own class names and rules. Speak to Plaashek about your situation.</td></tr>
+    <tr><td>Devices</td><td>Any Apple or Android phone for the field, a PC or phone for the office. Nothing to install from an app store.</td></tr>
+    <tr><td>Hosting and data</td><td>Your farm lives at yourfarm.plaashek.co.za on a South African hosting service, encrypted in transit and at rest, backed up daily, never shared between farms.</td></tr>
+  </table>
+  <div class="note">Plaashek Kudde is one module of the Plaashek suite. It stands on its own, with the same badge-free, offline-first design as the orchard modules.</div>
+</section>
+
+</body>
+</html>
